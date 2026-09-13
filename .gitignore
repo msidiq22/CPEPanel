@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+app/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+.cxx/
+captures/
+
+# 本地环境（含本机 SDK 路径，绝不入库）
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log

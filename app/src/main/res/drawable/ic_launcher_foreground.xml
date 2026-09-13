@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信号塔 + 电波，代表 5G CPE 网络面板 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 底座立柱 -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M54,58 L54,80" />
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M42,80 L66,80" />
+
+    <!-- 天线杆 -->
+    <path
+        android:strokeColor="#E6EDF7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M54,30 L54,58" />
+
+    <!-- 信号弧线（由内向外） -->
+    <path
+        android:strokeColor="#34D399"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M45,40 A13,13 0 0 1 63,40" />
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M37,33 A24,24 0 0 1 71,33" />
+    <path
+        android:strokeColor="#60A5FA"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M29,26 A35,35 0 0 1 79,26" />
+
+    <!-- 信号源点 -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M54,22 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>

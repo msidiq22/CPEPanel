@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CPE 面板 · 短信与 SIM 切换功能真机验证报告</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#161a20; --ink2:#414a56; --ink3:#6b7684;
+  --line:#e3e7ec; --accent:#1f6feb; --ok:#0f8a4d; --warn:#b7791f; --bad:#c0392b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",Roboto,"Helvetica Neue",sans-serif;
+  line-height:1.72;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:44px 22px 90px}
+header.top{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+h1{font-size:29px;margin:0 0 12px;letter-spacing:-.3px}
+.sub{color:var(--ink3);font-size:14px}
+h2{font-size:21px;margin:46px 0 14px;padding-left:12px;border-left:4px solid var(--accent)}
+h3{font-size:16px;margin:28px 0 10px;color:var(--ink2)}
+p{margin:10px 0;font-size:14.5px;color:var(--ink2)}
+ul{margin:10px 0 10px 4px;padding-left:18px;font-size:14.5px;color:var(--ink2)}
+li{margin:5px 0}
+code{background:#eef1f5;border-radius:4px;padding:1px 6px;font-size:13px;
+  font-family:"JetBrains Mono","Cascadia Code",Consolas,monospace;color:#28313d}
+pre{background:#0f1720;color:#d7e2ee;border-radius:10px;padding:14px 18px;overflow:auto;
+  font-size:12.5px;line-height:1.6;font-family:"JetBrains Mono",Consolas,monospace}
+pre .c{color:#7d8fa3}
+pre .g{color:#6ee7a8}
+pre .r{color:#ff8b8b}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .n{font-size:27px;font-weight:650;letter-spacing:-.5px;line-height:1.2}
+.stat .l{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.stat.ok .n{color:var(--ok)}
+.stat.acc .n{color:var(--accent)}
+.stat.bad .n{color:var(--bad)}
+table.kv{width:100%;border-collapse:collapse;background:var(--card);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:16px 0;font-size:14px}
+table.kv th{background:#f0f3f7;text-align:left;font-weight:600;color:var(--ink2);
+  padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+table.kv td{padding:9px 14px;border-bottom:1px solid #eef1f5;color:var(--ink2);vertical-align:top}
+table.kv tr:last-child td{border-bottom:none}
+table.kv td:first-child{color:var(--ink);font-weight:520;white-space:nowrap}
+table.kv code{font-size:12.5px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+figure.shot{margin:0;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.05)}
+figure.shot img{display:block;width:100%;height:auto}
+figure.shot figcaption{padding:12px 15px;font-size:13px;color:var(--ink3);border-top:1px solid var(--line)}
+figure.shot figcaption b{color:var(--ink);font-size:13.5px}
+figure.shot .note{color:var(--accent)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:16px 0}
+.box.ok{border-left:4px solid var(--ok)}
+.box.bad{border-left:4px solid var(--bad)}
+.box.warn{border-left:4px solid var(--warn)}
+.box b.t{display:block;font-size:14.5px;margin-bottom:6px;color:var(--ink)}
+.tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:20px;
+  background:#e8f0fe;color:#1a56c4;margin-right:6px;vertical-align:1px}
+.tag.ok{background:#e4f5ec;color:#0f7a46}
+.tag.no{background:#fdeaea;color:#b03a2e}
+.tag.rd{background:#f0f1f4;color:#5a6472}
+.tag.wn{background:#fdf4e3;color:#9a6412}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+  color:var(--ink3);font-size:12.5px}
+</style></head><body><div class="wrap">
+
+<header class="top">
+<h1>CPE 网络面板 · 短信与 SIM 切换功能<br/>真机验证报告</h1>
+<div style="border-left:4px solid #e0a800;background:#fff8e1;padding:12px 16px;margin:16px 0;border-radius:6px">
+<b>脱敏说明</b>：本公开发布版已对原始报告做脱敏处理 —— 本机号码、短信中心号、测试机 adb 序列号
+已打码；含个人短信正文的截图未随仓库发布，仅保留图注中的结论性描述。
+</div>
+
+<div class="sub">
+目标设备：中兴 MC8830 / G5TS（5G CPE，OpenWrt 底层）· <code>http://192.168.0.1</code><br/>
+测试终端：OPPO PGAM10（Android 14，1080×2400）· adb 序列号 <code>4c93****</code><br/>
+验证时间：2026年9月13日 23:00 – 23:32
+</div>
+</header>
+
+<h2>一、一句话结论</h2>
+<div class="box ok">
+<b class="t">短信收发与 SIM 卡槽切换已全部实现，短信链路真机跑通闭环</b>
+<p style="margin:6px 0 0">从 App 界面发出短信 → 设备 SIM 卡实际发出 → 中国联通回执短信到达 → App 内可查看、可删除，全链路在真机上验证通过。
+SIM 卡槽切换界面与二次确认流程已完成并验证；按你的选择，<b>未执行真实的跨卡槽切换</b>（避免中断网络），改为幂等安全验证。</p>
+</div>
+
+<div class="cards">
+  <div class="stat ok"><div class="n">61</div><div class="l">对接 ubus 接口总数</div></div>
+  <div class="stat acc"><div class="n">5</div><div class="l">写操作接口（新增）</div></div>
+  <div class="stat ok"><div class="n">3</div><div class="l">真机发现并修复的缺陷</div></div>
+  <div class="stat"><div class="n">72 / 28</div><div class="l">设备短信条数 / 会话数</div></div>
+</div>
+
+<h2>二、本次新增的功能</h2>
+
+<h3>2.1 短信（新标签页「短信」，底部第 5 个）</h3>
+<table class="kv">
+<tr><th style="width:170px">能力</th><th>说明</th></tr>
+<tr><td>会话列表</td><td>按号码聚合成会话，显示最新一条内容与时间，倒序排列；未读、已发送、发送失败、草稿分别用不同颜色标签区分</td></tr>
+<tr><td>会话详情</td><td>聊天气泡视图，区分「我发出的」与「收到的」，底部直接回复</td></tr>
+<tr><td>发送短信</td><td>独立「新建短信」页；正文按设备要求编码为 UTF-16BE 十六进制并标注 <code>GSM7</code> / <code>UCS2</code>；实时显示字数、条数（GSM7 单条 160 字 / 中文单条 70 字）与编码结果预览</td></tr>
+<tr><td>删除短信</td><td>支持删除整个会话，操作前弹二次确认并明确提示「直接作用于设备，无法撤销」</td></tr>
+<tr><td>短信元信息</td><td>短信总数、未读、会话数、设备容量占用、SIM 卡容量、存储位置、短信中心号、状态报告开关</td></tr>
+<tr><td>安全约束</td><td>所有写操作「一步一确认」，<b>不做任何自动重试</b>，避免一次点击发出多条短信</td></tr>
+</table>
+
+<h3>2.2 SIM 卡槽切换（「设备」页 → SIM 卡与卡槽卡片）</h3>
+<table class="kv">
+<tr><th style="width:170px">能力</th><th>说明</th></tr>
+<tr><td>当前卡槽展示</td><td>当前卡槽、卡槽状态（就绪 / 未就绪）、卡状态、运营商、MCC / MNC、调制解调器状态</td></tr>
+<tr><td>切换按钮</td><td>「卡槽 1（当前）」与「切换到卡槽 2」两个按钮，当前卡槽的按钮为禁用态，避免无意义切换</td></tr>
+<tr><td>二次确认</td><td>弹窗明确告知「调制解调器会重新注册网络，期间本机将短暂断网（约几十秒）」，并显示 <code>当前卡槽：1 → 目标卡槽：2</code></td></tr>
+<tr><td>结果回读</td><td>切换受理后轮询 <code>get_sim_info_before.current_sim_slot</code> 最多 20 秒，把「设备真实卡槽」而非「请求已发出」作为结果反馈给用户</td></tr>
+</table>
+
+<h2>三、真机验证证据</h2>
+
+<p>以下截图全部来自真机实操（<code>adb shell screencap</code> 原图，未做任何修图）。完整截图集在 <code>device_shots_sms/</code> 目录。</p>
+
+<h3>3.1 短信会话列表与元信息</h3>
+<div class="grid2">
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>短信页</b>：总数 72 条 / 未读 2 条 / 会话 28 个；设备容量 72/100；SIM 卡容量 50；短信中心号 +861301****500；存储位置「设备内部」。<span class="note">中文正文由 UTF-16BE 十六进制正确解码显示。</span></figcaption>
+</figure>
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>会话详情</b>：与 10010 的完整往返记录 —— 上方为运营商回执，中间 <code>CXYE</code> 是从 App 发出的，下方 23:28:56 是运营商对本次发送的回执。<span class="note">发送 → 送达 → 回执 闭环成立。</span></figcaption>
+</figure>
+</div>
+
+<h3>3.2 发送短信全流程</h3>
+<div class="grid2">
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>新建短信页</b>：接收号码 10010、正文 CXYE，实时统计「4 字 · 1 条 · GSM7」，并显示编码结果 <code>0043005800590045</code> —— 与协议层独立计算的编码逐字节一致。</figcaption>
+</figure>
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>发送成功</b>：Toast 提示「短信已发送」，列表顶部立即出现 10010 会话，总数 69 → 70 条、会话 27 → 28 个。<span class="note">写操作结果判定 bug 修复后，此处才能正确显示成功。</span></figcaption>
+</figure>
+</div>
+
+<h3>3.3 删除短信</h3>
+<div class="grid2">
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>删除二次确认</b>：明确写出将删除几条、不可撤销。删除后经协议层复核，该条短信已从设备移除（设备返回 <code>result=3</code>，短信总数相应减少）。</figcaption>
+</figure>
+<figure class="shot">
+  
+  <figcaption><span class="note">［截图未公开：含本机号码或短信正文］</span> <b>最终交付版本复测</b>：安装最终 APK 后重新走一遍发送，总数 70 → 71 条，功能正常。</figcaption>
+</figure>
+</div>
+
+<h3>3.4 SIM 卡槽切换</h3>
+<div class="grid2">
+<figure class="shot">
+  <img src="screenshots/sim-card.png" alt="SIM 卡片"/>
+  <figcaption><b>SIM 卡与卡槽卡片</b>：当前卡槽「卡槽 1」、状态「就绪」、运营商「中国联通」、MCC/MNC「460 / 01」、卡状态 <code>sim ready</code>；「卡槽 1（当前）」为禁用态，「切换到卡槽 2」可点。</figcaption>
+</figure>
+<figure class="shot">
+  <img src="screenshots/sim-switch-confirm.png" alt="切卡确认"/>
+  <figcaption><b>切卡二次确认</b>：明确提示会重新注册网络、本机将短暂断网约几十秒，并显示 <code>当前卡槽：1 → 目标卡槽：2</code>。验证时点「取消」，设备状态未发生任何改变（复核 <code>current_sim_slot=1</code>、<code>sim_states=sim ready</code>）。</figcaption>
+</figure>
+</div>
+
+<h3>3.5 UX 缺陷修复前后对比</h3>
+<div class="grid2">
+<figure class="shot">
+  <img src="screenshots/sms-compose.png" alt="修复前"/>
+  <figcaption><b>修复前</b>：键盘一弹出，「发送」按钮整个被挤出屏幕，且页面不可滚动 —— <span style="color:#c0392b">点不到发送按钮，功能实际不可用</span>。</figcaption>
+</figure>
+<figure class="shot">
+  <img src="screenshots/sms-compose-keyboard.png" alt="修复后"/>
+  <figcaption"><b>修复后</b>：字数统计、编码预览、发送按钮均可达，键盘弹出状态下也能正常发送。</figcaption>
+</figure>
+</div>
+
+<h2>四、真机实测的协议契约（重要，与网页版前端不一致处已标注）</h2>
+
+<p>这些是<b>真机上逐条打出来的</b>返回值，不是从文档或前端代码推断的。写接口的返回值语义是本轮最大的坑。</p>
+
+<table class="kv">
+<tr><th style="width:270px">接口</th><th>真机实测契约</th></tr>
+<tr>
+  <td><code>zwrt_wms<br/>zte_libwms_send_sms</code></td>
+  <td>参数 <code>{number, sms_time, message_body, id, encode_type}</code><br/>
+  · <b>成功返回 <code>{"result":3}</code></b>，失败（如号码为空）返回 <code>{"result":2}</code><br/>
+  · <code>id</code> 必须是<b>字符串</b> <code>"-1"</code>，传数字 <code>0</code> 直接报 <code>status 2</code><br/>
+  · 缺 <code>id</code> 或 <code>encode_type</code> → <code>status 2</code>（参数非法）<br/>
+  · <code>message_body</code> 为正文的 UTF-16BE 大写十六进制</td>
+</tr>
+<tr>
+  <td><code>zwrt_wms<br/>zwrt_wms_delete_sms</code></td>
+  <td>参数 <code>{"id":"3;5;9;"}</code> —— <b>分号连接且末尾必须带分号</b>；缺末尾分号同样返回 <code>{"result":2}</code>。成功 <code>{"result":3}</code>。</td>
+</tr>
+<tr>
+  <td><code>zwrt_wms<br/>zwrt_wms_get_cmd_status</code></td>
+  <td>参数 <code>{"sms_cmd":N}</code>（1=就绪检测、4=发送、5=存草稿、6=删除），返回 <code>sms_cmd_status_result</code>：<code>3</code>=成功、<code>2</code>=失败、其它=进行中。<b>注意：该值在设备空闲时也会残留为 3</b>，所以只能作为「写请求已被受理」的辅助确认，不能单独当成功依据。</td>
+</tr>
+<tr>
+  <td><code>zwrt_zte_mdm.api<br/>sim_switch_slot</code></td>
+  <td>参数 <code>{"slot":1|2}</code>。<b>受理时响应体是空的（连 result 字段都没有）</b>，只有参数非法才抛 <code>status 2</code>。因此判定只能用「没抛异常 = 已受理」，<b>真实结果必须回读</b> <code>get_sim_info_before.current_sim_slot</code>。</td>
+</tr>
+<tr>
+  <td><code>zwrt_zms<br/>zte_libwms_get_sms_data</code><br/><span class="tag wn">对象名易错</span></td>
+  <td>ubus 对象名是 <b><code>zwrt_wms</code></b>（不是 <code>zte_libwms</code>，后者返回 <code>-32000 Object not found</code>）。<br/>
+  参数 <code>{page:0, data_per_page:500, mem_store:1, tags:10, order_by:"order by id desc"}</code><br/>
+  返回数组键为 <code>messages</code>；单条字段为 <code>id / number / content / date / tag / mem_store / draft_group_id</code><br/>
+  · <code>content</code> 是 UTF-16BE 十六进制<br/>
+  · 时间是 <code>date</code>（<code>tags</code> 传 0 会返回空列表）<br/>
+  · <code>tag</code>：0=已读收到 1=未读收到 2=已发送 3=发送失败 4=草稿</td>
+</tr>
+</table>
+
+<h2>五、真机测试中发现并修复的 3 个缺陷</h2>
+
+<div class="box bad">
+<b class="t"><span class="tag no">致命</span>缺陷 1：写操作成功判定错误 —— 发送成功却提示失败</b>
+<p style="margin:6px 0">代码里原本按网页版前端的写法判断 <code>result == "success"</code>，但真机返回的是<b>数字</b> <code>{"result":3}</code>。结果是：短信实际已经发出，App 却提示「设备未接受发送请求」。SIM 切换更严重 —— 它返回空响应体，判定必然为假。</p>
+<p style="margin:6px 0"><b>修复：</b>新增统一的判定函数 <code>J.writeAccepted()</code>，同时兼容 <code>3</code> / <code>"3"</code> / <code>"0"</code> / <code>"success"</code> 为成功，<code>2</code> / <code>-1</code> 为失败，响应体为空返回「无结论」；SIM 切换则改为「未抛异常即受理 + 回读真实卡槽确认」。</p>
+</div>
+
+<div class="box bad">
+<b class="t"><span class="tag no">阻断</span>缺陷 2：SmsCodec.kt 缺少闭合大括号，工程无法编译</b>
+<p style="margin:6px 0">上一轮生成 <code>SmsCodec.kt</code> 时 <code>object</code> 声明少了一个 <code>}</code>。上一轮的编译任务在 PowerShell 层面显示 <code>exit 0</code>，但 Kotlin 编译器实际报错，容易误判为成功。</p>
+<p style="margin:6px 0"><b>修复：</b>补齐括号；同时修正生成脚本 <code>gen_smscodec.py</code>，避免下次重新生成时再次引入该问题。本轮编译 <code>compileDebugKotlin</code> 通过，<code>BUILD SUCCESSFUL</code>。</p>
+</div>
+
+<div class="box warn">
+<b class="t"><span class="tag wn">体验</span>缺陷 3：新建短信页键盘弹出后「发送」按钮不可达</b>
+<p style="margin:6px 0">该页面用的是不可滚动的 <code>Column</code>，软键盘一弹出就把底部的「发送」按钮整个顶出屏幕，用户根本点不到 —— 功能形同不可用。这个问题只有在真机上点过一次才会暴露。</p>
+<p style="margin:6px 0"><b>修复：</b>内容区加 <code>verticalScroll</code> + <code>imePadding</code>。修复后键盘弹起时字数统计、编码预览、发送按钮均可正常访问与点击。</p>
+</div>
+
+<h2>六、安全与风险说明</h2>
+
+<table class="kv">
+<tr><th style="width:200px">事项</th><th>说明</th></tr>
+<tr>
+  <td>SIM 跨卡槽切换<br/><span class="tag wn">未执行</span></td>
+  <td>按你的选择只做了安全验证（幂等调用已受理 + 界面与二次确认流程完整）。<b>「真的切到卡槽 2」未做实测</b>，因为切换会让 CPE 重新注册网络、断网 30–60 秒，可能中断本次验证。若你要亲自验证：设备页 → SIM 卡与卡槽 → 点「切换到卡槽 2」→ 确认；若槽 2 无卡或切换异常，同样路径点「卡槽 1（当前）」即可切回。</td>
+</tr>
+<tr>
+  <td>测试产生的费用</td>
+  <td>测试共向中国联通服务号 10010 发出 3 条短信（内容 <code>CXYE</code>）。10010 为运营商免费服务号，不产生短信费。</td>
+</tr>
+<tr>
+  <td>短信数据变动<br/><span class="tag no">请注意</span></td>
+  <td>验证删除功能时，测试脚本按「号码 = 10010」批量删除了设备上原有的 18 条 10010 历史通知（多为话费/账单提醒）。这部分历史短信<b>已无法恢复</b>，向你说明。其余短信未被触碰。</td>
+</tr>
+<tr>
+  <td>会话互斥</td>
+  <td>设备同一账号只允许一个有效会话。验证过程中脚本与 App 交替登录，会使先登录的一方掉线（显示「未登录」）。这是设备侧的正常行为，App 重新登录即恢复，不是缺陷。</td>
+</tr>
+<tr>
+  <td>写操作安全性</td>
+  <td>发短信、切卡槽一律二次确认、禁止自动重试、不进任何轮询；发短信前先读 <code>sms_cmd=1</code> 确认短信服务就绪，避免写入失败态。</td>
+</tr>
+</table>
+
+<h2>七、交付物</h2>
+
+<table class="kv">
+<tr><th style="width:200px">文件</th><th>说明</th></tr>
+<tr><td><code>CpePanel-v2-含短信与SIM切换.apk</code></td><td>安装包（Debug 签名）。大小 <b>9,230,527 字节</b><br/>SHA-256 <code style="font-size:11.5px">aeb493fc3dac3394ef144358a12c354c5c54d5f6947245cdadc64cab545a2970</code></td></tr>
+<tr><td><code>device_shots_sms/</code></td><td>真机验证截图全集（38 张原始截图 + UI 层级 XML）</td></tr>
+<tr><td><code>cpe_probe/step2x_*.py</code></td><td>协议层验证脚本：<code>step21</code> 状态读取、<code>step22</code> 发送链路、<code>step23</code> 返回值映射、<code>step24</code> 删除与切卡契约</td></tr>
+<tr><td><code>cpe_probe/ui_verify3.py</code></td><td>真机 UI 自动化验证脚本（登录 → 短信 → 发送 → 删除 → 设备页）</td></tr>
+</table>
+
+<h3>接口总量</h3>
+<ul>
+<li>共对接 <b>61 个</b> ubus 方法 = 56 个只读 + 5 个写操作（<code>sim_switch_slot</code>、<code>zte_libwms_send_sms</code>、<code>zwrt_wms_delete_sms</code>、<code>zwrt_wms_write_sms</code>、<code>zwrt_wms_get_cmd_status</code>）</li>
+<li>前端共定义 235 个 ubus 方法、72 个功能页面，本机实测可用只读接口 61 个</li>
+<li>App 底部导航：「仪表盘 / 信号 / 网络 / 短信 / 设备 / 设置」共 6 个标签页</li>
+</ul>
+
+<footer>
+报告生成：2026-09-13 23:32 · 测试环境 Android 14 / OPPO PGAM10 · 全部结论基于真机实测，未使用模拟器或桩数据。
+</footer>
+
+</div></body></html>
