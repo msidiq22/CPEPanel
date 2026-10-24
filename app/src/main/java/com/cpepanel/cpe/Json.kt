@@ -87,7 +87,7 @@ object J {
             val key = if (prefix.isEmpty()) k else "$prefix.$k"
             when (val v = json.opt(k)) {
                 is JSONObject -> out += flatten(v, key)
-                is org.json.JSONArray -> out += key to "[${v.length()} 项]"
+                is org.json.JSONArray -> out += key to "[${v.length()} items]"
                 null, JSONObject.NULL -> out += key to "—"
                 else -> out += key to v.toString()
             }
