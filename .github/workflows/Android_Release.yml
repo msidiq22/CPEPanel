@@ -35,7 +35,8 @@ jobs:
         run: |
           mkdir -p release-artifacts
           VERSION_TAG="${{ github.ref_name || format('v{0}', github.run_number) }}"
-          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/CPEPanel-${VERSION_TAG}.apk"
+          SAFE_VERSION_TAG="${VERSION_TAG//\//-}"
+          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/CPEPanel-${SAFE_VERSION_TAG}.apk"
 
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
