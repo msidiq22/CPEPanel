@@ -65,7 +65,7 @@ fun SettingsTab(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            PanelCard(title = "CPE 地址", accent = Cyan) {
+            PanelCard(title = "CPE address", accent = Cyan) {
                 OutlinedTextField(
                     value = urlDraft,
                     onValueChange = { urlDraft = it },
@@ -88,18 +88,18 @@ fun SettingsTab(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Cyan.copy(alpha = 0.16f), contentColor = Cyan
                         )
-                    ) { Text("保存并重连", fontSize = 13.sp) }
+                    ) { Text("Save & reconnect", fontSize = 13.sp) }
                     TextButton(onClick = { urlDraft = "http://192.168.0.1" }) {
-                        Text("恢复默认", color = TextLo, fontSize = 13.sp)
+                        Text("Restore default", color = TextLo, fontSize = 13.sp)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                HintBox("多数中兴 CPE 默认是 http://192.168.0.1；若改过 LAN 网段或端口，填完整地址即可。", TextLo)
+                HintBox("Most ZTE CPEs default to http://192.168.0.1; if the LAN subnet or port was changed, enter the full address.", TextLo)
             }
         }
 
         item {
-            PanelCard(title = "刷新频率", accent = Blue) {
+            PanelCard(title = "Refresh rate", accent = Blue) {
                 val options = listOf(1000L, 3000L, 5000L, 10000L, 30000L, 0L)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -116,9 +116,9 @@ fun SettingsTab(
                 Spacer(Modifier.height(8.dp))
                 HintBox(
                     if (state.refreshMs <= 0L) {
-                        "当前：已关闭自动刷新。数据不再自动更新，可用右上角按钮手动刷新一次。"
+                        "Current: auto-refresh is off. Data no longer updates itself; use the button in the top-right to refresh once."
                     } else {
-                        "当前：${refreshLabel(state.refreshMs)}。采样越密，信号曲线越平滑，耗电也略高。"
+                        "Current: ${refreshLabel(state.refreshMs)}. Denser sampling smooths the signal curve but costs a little more battery."
                     },
                     TextLo
                 )
@@ -126,8 +126,8 @@ fun SettingsTab(
         }
 
         item {
-            PanelCard(title = "管理员登录", accent = if (state.loggedIn) Mint else Amber) {
-                KV("当前状态", if (state.loggedIn) "已登录（可读全部只读接口）" else "未登录（仅免登录接口）",
+            PanelCard(title = "Admin sign-in", accent = if (state.loggedIn) Mint else Amber) {
+                KV("Status", if (state.loggedIn) "Signed in (all authenticated endpoints)" else "Signed out (anonymous endpoints only)",
                     if (state.loggedIn) Mint else Amber, mono = false)
                 Spacer(Modifier.height(10.dp))
                 if (state.loggedIn) {
@@ -136,33 +136,34 @@ fun SettingsTab(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Rose.copy(alpha = 0.16f), contentColor = Rose
                         )
-                    ) { Text("退出登录", fontSize = 13.sp) }
+                    ) { Text("Sign out", fontSize = 13.sp) }
                 } else {
                     Button(
                         onClick = onLoginClick,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Cyan.copy(alpha = 0.16f), contentColor = Cyan
                         )
-                    ) { Text("登录", fontSize = 13.sp) }
+                    ) { Text("Sign in", fontSize = 13.sp) }
                 }
                 Spacer(Modifier.height(8.dp))
                 HintBox(
-                    "本应用只做只读采集，不会修改设备任何配置。\n" +
-                        "登录口令在前端即完成两次 SHA-256 加盐哈希，明文密码不会离开手机。",
+                    "This app is read-first: the only writes are SMS send/delete and SIM slot switching, each confirmed;\n" +
+                        "it never changes network, Wi-Fi or routing configuration.\n" +
+                        "The password is salted and hashed twice with SHA-256 on the phone; the plaintext never leaves it.",
                     TextLo
                 )
             }
         }
 
         item {
-            PanelCard(title = "高级", accent = TextMu) {
+            PanelCard(title = "Advanced", accent = TextMu) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.weight(1f)) {
-                        Text("会话加密协商", color = TextHi, fontSize = 14.sp)
+                        Text("Session encryption", color = TextHi, fontSize = 14.sp)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "登录后额外协商 RSA + AES 会话密钥，与官方前端行为一致。\n" +
-                                "设备返回的 Wi-Fi 密钥、APN 口令等字段靠它才能解密，建议保持开启。",
+                            "Negotiates an RSA + AES session key after sign-in, matching the stock web UI.\n" +
+                                "Wi-Fi keys, APN passwords and similar fields can only be decrypted with it, so keep it on.",
                             color = TextLo, fontSize = 11.sp, lineHeight = 16.sp
                         )
                     }
@@ -178,12 +179,12 @@ fun SettingsTab(
                 }
                 Spacer(Modifier.height(10.dp))
                 KV(
-                    "当前状态",
+                    "Status",
                     when {
-                        !state.negotiateCrypto -> "已关闭"
-                        state.cryptoReady -> "已协商成功"
-                        state.loggedIn -> "等待协商（重新登录生效）"
-                        else -> "未登录"
+                        !state.negotiateCrypto -> "Off"
+                        state.cryptoReady -> "Negotiated"
+                        state.loggedIn -> "Pending (applies on next sign-in)"
+                        else -> "Signed out"
                     },
                     if (state.cryptoReady) Mint else TextMu,
                     mono = false
@@ -194,12 +195,12 @@ fun SettingsTab(
         item { RawDataCard(state, expanded) { expanded = if (expanded == it) null else it } }
 
         item {
-            PanelCard(title = "说明", accent = TextMu) {
+            PanelCard(title = "About", accent = TextMu) {
                 Text(
-                    "本应用是个人自用的本地管理面板，直连你的 CPE，不经过任何云端服务器。\n\n" +
-                        "· 所有请求都发往你在「CPE 地址」里填写的设备；\n" +
-                        "· 不收集、不上传任何数据；\n" +
-                        "· 当前版本只读，不包含任何写入/重启/改配置的操作。",
+                    "A personal, local-only management panel that talks straight to your CPE with no cloud server involved.\n\n" +
+                        "· Every request goes to the device address you entered under “CPE address”;\n" +
+                        "· no data is collected or uploaded;\n" +
+                        "· the only writes are SMS send/delete and SIM slot switching, each confirmed and never retried automatically.",
                     color = TextLo, fontSize = 12.sp, lineHeight = 19.sp
                 )
             }
@@ -224,9 +225,9 @@ private fun RefreshChip(ms: Long, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun RawDataCard(state: CpeState, expanded: String?, onToggle: (String) -> Unit) {
-    PanelCard(title = "原始接口数据", accent = Blue) {
+    PanelCard(title = "Raw endpoint data", accent = Blue) {
         Text(
-            "点开任意接口可以直接看到设备返回的原始 JSON，便于对照排查。",
+            "Expand any endpoint to see the raw JSON the device returned, handy for cross-checking problems.",
             color = TextLo, fontSize = 11.sp, lineHeight = 16.sp
         )
         Spacer(Modifier.height(8.dp))
@@ -243,8 +244,8 @@ private fun RawRow(m: UbusMethod, state: CpeState, isOpen: Boolean, onToggle: ()
     val err = state.freeErrors[m.key] ?: state.authErrors[m.key]
     val statusText = when {
         data != null -> "OK"
-        err != null -> if (err.contains("登录")) "需登录" else "失败"
-        else -> "未采集"
+        err != null -> if (err.contains("login", true)) "Sign-in needed" else "Failed"
+        else -> "Not fetched"
     }
     val statusColor = when {
         data != null -> Mint
@@ -281,7 +282,7 @@ private fun RawRow(m: UbusMethod, state: CpeState, isOpen: Boolean, onToggle: ()
                 val text = when {
                     data != null -> runCatching { data.toString(2) }.getOrElse { data.toString() }
                     err != null -> err
-                    else -> "尚未采集到数据"
+                    else -> "No data collected yet"
                 }
                 Text(
                     text,
