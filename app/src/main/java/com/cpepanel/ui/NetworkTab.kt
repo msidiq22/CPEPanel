@@ -74,15 +74,15 @@ fun NetworkTab(state: CpeState, onLoginClick: () -> Unit) {
 
 @Composable
 private fun NeedLoginCard(onLoginClick: () -> Unit) {
-    PanelCard(title = "网络详情", accent = Amber) {
+    PanelCard(title = "Network details", accent = Amber) {
         HintBox(
-            "这一页的拨号参数、APN、DDNS、VPN、终端统计等都属于设备的管理面数据，" +
-                "需要先登录管理后台才能读取。未登录时只影响显示，不影响上面的实时监控。",
+            "Dial parameters, APN, DDNS, VPN and client statistics on this page are management-plane data " +
+                "and require an admin sign-in to read. Without it only this page is hidden; live monitoring above still works.",
             TextLo
         )
         Spacer(Modifier.height(10.dp))
         TextButton(onClick = onLoginClick) {
-            Text("立即登录", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text("Sign in now", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -95,11 +95,11 @@ private fun WanDialCard(state: CpeState) {
     val iface = state.wanIface
 
     if (para == null && iface == null) {
-        PanelCard(title = "拨号与 WAN 链路", accent = Cyan) {
+        PanelCard(title = "Dial-up & WAN link", accent = Cyan) {
             HintBox(
                 state.authErrors[Api.WAN_IFACE.key]
                     ?: state.authErrors[Api.WAN_MODE_PARA.key]
-                    ?: "正在读取拨号参数…",
+                    ?: "Reading dial parameters…",
                 Amber
             )
         }
@@ -108,7 +108,7 @@ private fun WanDialCard(state: CpeState) {
 
     val connStatus = iface?.s("connect_status") ?: ""
     PanelCard(
-        title = "拨号与 WAN 链路",
+        title = "Dial-up & WAN link",
         accent = Cyan,
         trailing = {
             if (connStatus.isNotBlank()) {
@@ -120,56 +120,56 @@ private fun WanDialCard(state: CpeState) {
         }
     ) {
         para?.let { p ->
-            KV("拨号模式", wanModeText(p.s("opms_wan_mode"), p.s("opms_wan_auto_mode")))
+            KV("Dial mode", wanModeText(p.s("opms_wan_mode"), p.s("opms_wan_auto_mode")))
             val err = p.s("error_code")
-            if (err.isNotBlank()) KV("拨号错误码", err, Rose)
+            if (err.isNotBlank()) KV("Dial error code", err, Rose)
 
             val pppoeUser = p.digS("pppoe_wan_mode_info.username")
-            if (pppoeUser.isNotBlank()) KV("PPPoE 账号", pppoeUser)
+            if (pppoeUser.isNotBlank()) KV("PPPoE user", pppoeUser)
             val keepalive = p.digS("pppoe_wan_mode_info.keepalive")
             if (keepalive.isNotBlank()) KV("PPPoE keepalive", keepalive)
 
             val sIp = p.digS("static_wan_mode_info.ipaddr")
             if (sIp.isNotBlank() && sIp != "0.0.0.0") {
-                KV("静态 IP", sIp)
-                KV("静态网关", p.digS("static_wan_mode_info.gateway"))
+                KV("Static IP", sIp)
+                KV("Static gateway", p.digS("static_wan_mode_info.gateway"))
             }
             val mvStatus = p.digS("pppoe_move_info.pppoe_move_status")
-            if (mvStatus.isNotBlank()) KV("拨号迁移状态", mvStatus)
+            if (mvStatus.isNotBlank()) KV("Migration status", mvStatus)
             val passMac = p.digS("bridge_wan_mode_info.wan_ippass_device_mac")
-            if (passMac.isNotBlank()) KV("IP 穿透设备", passMac)
+            if (passMac.isNotBlank()) KV("IP passthrough device", passMac)
         }
 
         iface?.let { f ->
             Spacer(Modifier.height(6.dp))
-            KV("连接方式", connectModeText(f.i("connect_mode")))
-            KV("链路状态", f.s("roll_connect_status"))
+            KV("Connection mode", connectModeText(f.i("connect_mode")))
+            KV("Link state", f.s("roll_connect_status"))
             val fail = f.i("connect_fail_count")
-            KV("重连次数", fail.toString(), if (fail > 3) Amber else TextHi)
-            KV("漫游", if (f.i("roam_enable") == 1) "已开启" else "已关闭")
+            KV("Reconnects", fail.toString(), if (fail > 3) Amber else TextHi)
+            KV("Roaming", if (f.i("roam_enable") == 1) "On" else "Off")
 
             Spacer(Modifier.height(6.dp))
             val v4 = f.s("ipv4_address")
-            KV("IPv4 地址", v4, if (v4.isBlank()) TextHi else Cyan)
-            KV("IPv4 网关", f.s("ipv4_gateway"))
-            KV("子网掩码", f.s("ipv4_netmask"))
-            KV("首选 DNS", f.s("ipv4_dns_prefer"))
-            KV("备用 DNS", f.s("ipv4_dns_standby"))
+            KV("IPv4 address", v4, if (v4.isBlank()) TextHi else Cyan)
+            KV("IPv4 gateway", f.s("ipv4_gateway"))
+            KV("Subnet mask", f.s("ipv4_netmask"))
+            KV("Primary DNS", f.s("ipv4_dns_prefer"))
+            KV("Secondary DNS", f.s("ipv4_dns_standby"))
 
             val v6 = f.s("ipv6_address")
             if (v6.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                KV("IPv6 地址", v6, Cyan)
-                KV("IPv6 网关", f.s("ipv6_gateway"))
+                KV("IPv6 address", v6, Cyan)
+                KV("IPv6 gateway", f.s("ipv6_gateway"))
                 KV("IPv6 DNS", f.s("ipv6_dns_prefer"))
             }
 
             Spacer(Modifier.height(6.dp))
-            KV("QCI 等级", f.i("qci").toString())
+            KV("QCI", f.i("qci").toString())
             val dl = f.l("dl_ambr")
             val ul = f.l("ul_ambr")
-            if (dl > 0) KV("签约下行", rateText(dl * 1000L))
-            if (ul > 0) KV("签约上行", rateText(ul * 1000L))
+            if (dl > 0) KV("Downlink (contract)", rateText(dl * 1000L))
+            if (ul > 0) KV("Uplink (contract)", rateText(ul * 1000L))
         }
     }
 }
@@ -180,25 +180,25 @@ private fun WanDialCard(state: CpeState) {
 private fun ClientStatCard(state: CpeState) {
     val n = state.userNum
     if (n == null) {
-        PanelCard(title = "终端统计", accent = Violet) {
-            HintBox(state.authErrors[Api.USER_NUM.key] ?: "正在统计在线终端…", Amber)
+        PanelCard(title = "Client stats", accent = Violet) {
+            HintBox(state.authErrors[Api.USER_NUM.key] ?: "Counting clients…", Amber)
         }
         return
     }
-    PanelCard(title = "终端统计", accent = Violet) {
+    PanelCard(title = "Client stats", accent = Violet) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricTile("在线总数", n.i("access_total_num").toString(), "台", Cyan, Modifier.weight(1f))
-            MetricTile("有线", n.i("lan_num").toString(), "台", Blue, Modifier.weight(1f))
-            MetricTile("无线", n.i("wireless_num").toString(), "台", Violet, Modifier.weight(1f))
+            MetricTile("Online", n.i("access_total_num").toString(), "", Cyan, Modifier.weight(1f))
+            MetricTile("Wired", n.i("lan_num").toString(), "", Blue, Modifier.weight(1f))
+            MetricTile("Wireless", n.i("wireless_num").toString(), "", Violet, Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricTile("离线", n.i("offline_num").toString(), "台", TextMu, Modifier.weight(1f))
-            MetricTile("访客 2.4G", n.i("guest_num_24g").toString(), "台", Amber, Modifier.weight(1f))
-            MetricTile("访客 5G", n.i("guest_num_5g").toString(), "台", Amber, Modifier.weight(1f))
+            MetricTile("Offline", n.i("offline_num").toString(), "", TextMu, Modifier.weight(1f))
+            MetricTile("Guest 2.4G", n.i("guest_num_24g").toString(), "", Amber, Modifier.weight(1f))
+            MetricTile("Guest 5G", n.i("guest_num_5g").toString(), "", Amber, Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("统计口径来自设备自身的连接跟踪表，与设备页的在线终端明细一一对应。", TextLo)
+        HintBox("Counts come from the device's own connection-tracking table and match the client list on the Device tab.", TextLo)
     }
 }
 
@@ -209,26 +209,26 @@ private fun TrafficScopeCard(state: CpeState) {
     val cd = state.trafficClearDay
     val lim = state.trafficLimit
 
-    PanelCard(title = "流量统计口径", accent = Mint) {
+    PanelCard(title = "Data accounting", accent = Mint) {
         if (cd == null && lim == null) {
-            HintBox(state.authErrors[Api.TRAFFIC_CLEARDAY.key] ?: "正在读取…", Amber)
+            HintBox(state.authErrors[Api.TRAFFIC_CLEARDAY.key] ?: "Reading…", Amber)
             return@PanelCard
         }
         cd?.let {
             val enabled = it.b("enable")
-            KV("自动清零", if (enabled) "已开启" else "未开启", if (enabled) Mint else TextLo)
-            if (enabled) KV("清零日", "每月 ${it.i("clearday")} 日")
+            KV("Auto reset", if (enabled) "On" else "Off", if (enabled) Mint else TextLo)
+            if (enabled) KV("Reset day", "Day ${it.i("clearday")} of each month")
         }
         lim?.let {
             val on = it.b("enable")
-            KV("套餐限额", if (on) "已设置" else "未设置", if (on) Mint else TextLo)
+            KV("Plan quota", if (on) "Set" else "Not set", if (on) Mint else TextLo)
             if (on) {
                 val v = it.l("value")
-                KV("限额数值", bytesText(v))
-                KV("计费类型", if (it.i("type") == 2) "按月" else "按次")
-                KV("告警阈值", "${it.i("ratio")}%")
+                KV("Quota", bytesText(v))
+                KV("Billing period", if (it.i("type") == 2) "Monthly" else "One-off")
+                KV("Alert at", "${it.i("ratio")}%")
                 val over = it.i("overflow")
-                if (over > 0) KV("超量次数", over.toString(), Amber)
+                if (over > 0) KV("Over-limit count", over.toString(), Amber)
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -236,10 +236,10 @@ private fun TrafficScopeCard(state: CpeState) {
         if (month != null) {
             val rx = month.l("month_rx_bytes")
             val tx = month.l("month_tx_bytes")
-            if (rx > 0 || tx > 0) KV("本月累计", "↑ ${bytesText(tx)} / ↓ ${bytesText(rx)}")
+            if (rx > 0 || tx > 0) KV("This month", "↑ ${bytesText(tx)} / ↓ ${bytesText(rx)}")
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("「本月累计」由设备自己上报；若这里显示 0 而套餐进度条有数据，说明设备端统计模块未刷新，属设备行为。", TextLo)
+        HintBox("“This month” is reported by the device itself; if it shows 0 while the plan progress bar has data, the device's accounting module simply hasn't refreshed.", TextLo)
     }
 }
 
@@ -253,27 +253,27 @@ private fun ApnCard(state: CpeState) {
     val manu = state.apnManu?.optJSONArray("apnListArray")
 
     if (mode == null && cur == null && auto == null && manu == null) {
-        PanelCard(title = "APN 接入点", accent = Blue) {
-            HintBox(state.authErrors[Api.APN_MODE.key] ?: "正在读取 APN 配置…", Amber)
+        PanelCard(title = "APN", accent = Blue) {
+            HintBox(state.authErrors[Api.APN_MODE.key] ?: "Reading APN config…", Amber)
         }
         return
     }
 
     PanelCard(
-        title = "APN 接入点",
+        title = "APN",
         accent = Blue,
         trailing = {
             val m = mode?.i("apn_mode") ?: 0
-            Pill(if (m == 0) "自动" else "手动", if (m == 0) Mint else Amber)
+            Pill(if (m == 0) "Auto" else "Manual", if (m == 0) Mint else Amber)
         }
     ) {
         cur?.let { c ->
-            KV("配置名", c.s("profilename"))
-            KV("APN", c.s("wanapn").ifBlank { "（运营商默认）" }, Cyan)
-            KV("PDP 类型", pdpText(c.i("pdpType")))
-            KV("鉴权方式", pppAuthText(c.i("pppAuthMode")))
+            KV("Profile", c.s("profilename"))
+            KV("APN", c.s("wanapn").ifBlank { "(carrier default)" }, Cyan)
+            KV("PDP type", pdpText(c.i("pdpType")))
+            KV("Auth", pppAuthText(c.i("pppAuthMode")))
             KV("Profile ID", c.s("profileId"))
-            KV("启用状态", if (c.b("isEnable")) "已启用" else "未启用")
+            KV("Enabled", if (c.b("isEnable")) "Yes" else "No")
         }
 
         val autoN = auto?.length() ?: 0
@@ -282,19 +282,19 @@ private fun ApnCard(state: CpeState) {
             Spacer(Modifier.height(8.dp))
             PanelDivider()
             Spacer(Modifier.height(8.dp))
-            KV("自动配置条目", autoN.toString())
-            KV("手动配置条目", manuN.toString())
+            KV("Auto entries", autoN.toString())
+            KV("Manual entries", manuN.toString())
         }
 
         if (autoN > 0) {
             Spacer(Modifier.height(6.dp))
-            Text("自动识别到的接入点", color = TextLo, fontSize = 12.sp)
+            Text("Auto-detected access points", color = TextLo, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until minOf(autoN, 6)) {
                 val o = auto?.optJSONObject(idx) ?: continue
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        o.s("profilename").ifBlank { "未命名" },
+                        o.s("profilename").ifBlank { "Unnamed" },
                         color = TextHi, fontSize = 13.sp, modifier = Modifier.weight(1f),
                         maxLines = 1
                     )
@@ -306,7 +306,7 @@ private fun ApnCard(state: CpeState) {
             }
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("APN 由运营商下发时，设备会自动匹配；手动新增的配置会出现在「手动配置条目」里。", TextLo)
+        HintBox("When the carrier pushes an APN the device matches it automatically; manually added profiles show up under “Manual entries”.", TextLo)
     }
 }
 
@@ -316,17 +316,17 @@ private fun ApnCard(state: CpeState) {
 private fun WifiNetCard(state: CpeState) {
     val ifaces = state.wlanIface?.optJSONArray("ifaces")
     if (ifaces == null) {
-        PanelCard(title = "Wi-Fi 网络", accent = Violet) {
-            HintBox(state.authErrors[Api.WLAN_IFACE.key] ?: "正在读取 Wi-Fi 接口…", Amber)
+        PanelCard(title = "Wi-Fi networks", accent = Violet) {
+            HintBox(state.authErrors[Api.WLAN_IFACE.key] ?: "Reading Wi-Fi interfaces…", Amber)
         }
         return
     }
     val n = ifaces.length()
 
     PanelCard(
-        title = "Wi-Fi 网络",
+        title = "Wi-Fi networks",
         accent = Violet,
-        trailing = { Pill("$n 个 SSID", Violet) }
+        trailing = { Pill("$n SSIDs", Violet) }
     ) {
         for (idx in 0 until n) {
             val o = ifaces.optJSONObject(idx) ?: continue
@@ -345,17 +345,17 @@ private fun WifiNetCard(state: CpeState) {
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        o.s("ssid").ifBlank { "（未命名）" },
+                        o.s("ssid").ifBlank { "(unnamed)" },
                         color = Cyan, fontSize = 12.sp, fontFamily = FontFamily.Monospace,
                         maxLines = 1
                     )
                 }
-                Pill(if (disabled) "已关闭" else "已启用", if (disabled) TextMu else Mint)
+                Pill(if (disabled) "Off" else "On", if (disabled) TextMu else Mint)
             }
             Spacer(Modifier.height(6.dp))
-            KV("加密方式", encText(o.s("encryption")))
-            KV("SSID 广播", if (o.i("hidden") == 1) "已隐藏" else "可见")
-            KV("最大终端数", o.i("maxassoc").toString())
+            KV("Encryption", encText(o.s("encryption")))
+            KV("SSID broadcast", if (o.i("hidden") == 1) "Hidden" else "Visible")
+            KV("Max clients", o.i("maxassoc").toString())
         }
 
         val wps = state.wlanWps?.optJSONArray("wifi_wps_status_info")
@@ -363,7 +363,7 @@ private fun WifiNetCard(state: CpeState) {
             Spacer(Modifier.height(12.dp))
             PanelDivider()
             Spacer(Modifier.height(10.dp))
-            Text("WPS 配对状态", color = TextLo, fontSize = 12.sp)
+            Text("WPS status", color = TextLo, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until wps.length()) {
                 val o = wps.optJSONObject(idx) ?: continue
@@ -375,7 +375,7 @@ private fun WifiNetCard(state: CpeState) {
         val guest = state.wlanGuestTime?.optJSONArray("wlan_guest_left_time_info")
         if (guest != null && guest.length() > 0) {
             Spacer(Modifier.height(10.dp))
-            Text("访客网络剩余时长", color = TextLo, fontSize = 12.sp)
+            Text("Guest network time left", color = TextLo, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until guest.length()) {
                 val o = guest.optJSONObject(idx) ?: continue
@@ -391,31 +391,31 @@ private fun WifiNetCard(state: CpeState) {
 private fun WifiIsolateCard(state: CpeState) {
     val iso = state.wlanIsolate
     if (iso == null) {
-        PanelCard(title = "Wi-Fi 隔离与互访", accent = Amber) {
-            HintBox(state.authErrors[Api.WLAN_ISOLATE.key] ?: "正在读取隔离设置…", Amber)
+        PanelCard(title = "Wi-Fi isolation", accent = Amber) {
+            HintBox(state.authErrors[Api.WLAN_ISOLATE.key] ?: "Reading isolation settings…", Amber)
         }
         return
     }
-    PanelCard(title = "Wi-Fi 隔离与互访", accent = Amber) {
+    PanelCard(title = "Wi-Fi isolation", accent = Amber) {
         val items = listOf(
-            "wifi_isolate_enable" to "总开关",
-            "main_guest_enable" to "主/访客网络互访",
-            "lan_wifi_main_enable" to "有线访问主 Wi-Fi",
-            "lan_wifi_guest_enable" to "有线访问访客 Wi-Fi",
-            "wifimain24_wifimain5_enable" to "主 Wi-Fi 2.4G/5G 互访",
-            "wifiguest24_wifiguest5_enable" to "访客 2.4G/5G 互访",
-            "guest_access_restrict_enable" to "访客访问限制",
-            "main24_ap_isolation_enable" to "2.4G AP 隔离",
-            "main5_ap_isolation_enable" to "5G AP 隔离",
-            "main24_privacy_separator_enable" to "2.4G 隐私隔离",
-            "main5_privacy_separator_enable" to "5G 隐私隔离"
+            "wifi_isolate_enable" to "Master switch",
+            "main_guest_enable" to "Main/guest network access",
+            "lan_wifi_main_enable" to "Wired → main Wi-Fi",
+            "lan_wifi_guest_enable" to "Wired → guest Wi-Fi",
+            "wifimain24_wifimain5_enable" to "Main 2.4G ↔ 5G",
+            "wifiguest24_wifiguest5_enable" to "Guest 2.4G ↔ 5G",
+            "guest_access_restrict_enable" to "Guest access restriction",
+            "main24_ap_isolation_enable" to "2.4G AP isolation",
+            "main5_ap_isolation_enable" to "5G AP isolation",
+            "main24_privacy_separator_enable" to "2.4G privacy separation",
+            "main5_privacy_separator_enable" to "5G privacy separation"
         )
         for ((k, label) in items) {
             val on = iso.i(k) == 1
-            KV(label, if (on) "已开启" else "已关闭", if (on) Rose else TextHi)
+            KV(label, if (on) "On" else "Off", if (on) Rose else TextHi)
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("「已开启」表示该隔离项生效（设备间互相不可见）。红色代表网络被分隔，属正常安全配置。", TextLo)
+        HintBox("“On” means that isolation is in effect (clients cannot see each other). Red marks a separated network, which is a normal security setup.", TextLo)
     }
 }
 
@@ -425,19 +425,19 @@ private fun WifiIsolateCard(state: CpeState) {
 private fun DdnsCard(state: CpeState) {
     val d = state.ddns
     if (d == null) {
-        PanelCard(title = "DDNS 动态域名", accent = Cyan) {
-            HintBox(state.authErrors[Api.DDNS.key] ?: "正在读取 DDNS…", Amber)
+        PanelCard(title = "DDNS", accent = Cyan) {
+            HintBox(state.authErrors[Api.DDNS.key] ?: "Reading DDNS…", Amber)
         }
         return
     }
     val on = d.i("enable") == 1
     val status = d.s("status")
     PanelCard(
-        title = "DDNS 动态域名",
+        title = "DDNS",
         accent = Cyan,
         trailing = {
             Pill(
-                if (on) ddnsStatusText(status) else "未启用",
+                if (on) ddnsStatusText(status) else "Off",
                 when {
                     !on -> TextMu
                     status == "registered" -> Mint
@@ -447,23 +447,23 @@ private fun DdnsCard(state: CpeState) {
             )
         }
     ) {
-        KV("服务状态", if (on) "已启用" else "未启用")
-        KV("更新模式", if (d.s("mode") == "auto") "自动" else "手动")
+        KV("Service state", if (on) "On" else "Off")
+        KV("Update mode", if (d.s("mode") == "auto") "Auto" else "Manual")
         val svc = d.s("service")
-        if (svc.isNotBlank()) KV("服务商", svc)
+        if (svc.isNotBlank()) KV("Provider", svc)
         val domain = d.s("domain")
-        if (domain.isNotBlank()) KV("域名", domain, Cyan)
+        if (domain.isNotBlank()) KV("Domain", domain, Cyan)
         val hash = d.s("hash")
-        if (hash.isNotBlank()) KV("主机标识", hash)
+        if (hash.isNotBlank()) KV("Host ID", hash)
         val acc = d.s("accout")
-        KV("账号", if (acc.isBlank()) "（未填写）" else "已填写（密文保存）")
+        KV("Account", if (acc.isBlank()) "(not set)" else "Set (stored encrypted)")
         val providers = d.optJSONArray("providers")
         if (providers != null && providers.length() > 0) {
-            KV("可选服务商", providers.length().toString() + " 家")
+            KV("Providers", providers.length().toString())
         }
         if (!on) {
             Spacer(Modifier.height(10.dp))
-            HintBox("DDNS 用于把动态的公网 IP 绑定到一个固定域名，家庭宽带没有固定 IP 时才需要开启。", TextLo)
+            HintBox("DDNS binds a dynamic public IP to a fixed domain; you only need it on home broadband without a static IP.", TextLo)
         }
     }
 }
@@ -474,8 +474,8 @@ private fun DdnsCard(state: CpeState) {
 private fun TunnelCard(state: CpeState) {
     val t = state.tunnel
     if (t == null) {
-        PanelCard(title = "VPN 隧道", accent = Blue) {
-            HintBox(state.authErrors[Api.TUNNEL.key] ?: "正在读取隧道配置…", Amber)
+        PanelCard(title = "VPN tunnels", accent = Blue) {
+            HintBox(state.authErrors[Api.TUNNEL.key] ?: "Reading tunnel config…", Amber)
         }
         return
     }
@@ -490,9 +490,9 @@ private fun TunnelCard(state: CpeState) {
         "l2tpv3" to "L2TPv3"
     )
     PanelCard(
-        title = "VPN 隧道",
+        title = "VPN tunnels",
         accent = Blue,
-        trailing = { Pill("当前 ${t.s("cur_type").uppercase()}", Blue) }
+        trailing = { Pill("Current ${t.s("cur_type").uppercase()}", Blue) }
     ) {
         for ((k, label) in kinds) {
             val sub = t.optJSONObject(k) ?: continue
@@ -502,7 +502,7 @@ private fun TunnelCard(state: CpeState) {
             KV(
                 label,
                 when {
-                    st.isBlank() && server.isBlank() -> "未配置"
+                    st.isBlank() && server.isBlank() -> "Not configured"
                     st.isBlank() -> server
                     else -> "${tunnelText(st)}${if (server.isBlank()) "" else " · $server"}"
                 },
@@ -514,7 +514,7 @@ private fun TunnelCard(state: CpeState) {
             )
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("这里只是把设备当前的隧道配置读出来展示，App 不会改动任何 VPN 参数。", TextLo)
+        HintBox("This only displays the device's current tunnel configuration; the app never changes VPN settings.", TextLo)
     }
 }
 
@@ -525,8 +525,8 @@ private fun SecondAuthCard(state: CpeState) {
     val succ = state.secondAuthSucc?.optJSONArray("second_auth_succ_list_info")
     val fail = state.secondAuthFail?.optJSONArray("second_auth_fail_list_info")
     if (succ == null && fail == null) {
-        PanelCard(title = "上网认证（二次认证）", accent = Violet) {
-            HintBox(state.authErrors[Api.SECOND_AUTH_SUCC.key] ?: "正在读取认证列表…", Amber)
+        PanelCard(title = "Web authentication", accent = Violet) {
+            HintBox(state.authErrors[Api.SECOND_AUTH_SUCC.key] ?: "Reading auth list…", Amber)
         }
         return
     }
@@ -534,21 +534,21 @@ private fun SecondAuthCard(state: CpeState) {
     val nFail = fail?.length() ?: 0
 
     PanelCard(
-        title = "上网认证（二次认证）",
+        title = "Web authentication",
         accent = Violet,
-        trailing = { Pill("$nOk 通过 / $nFail 待认证", if (nFail > 0) Amber else Mint) }
+        trailing = { Pill("$nOk passed / $nFail pending", if (nFail > 0) Amber else Mint) }
     ) {
         if (nOk == 0 && nFail == 0) {
-            HintBox("当前没有设备走二次认证（校园网 / 酒店宽带这类需要 Web 认证的场景才会用到）。", TextLo)
+            HintBox("No client is using web authentication right now (only campus or hotel broadband portals need it).", TextLo)
             return@PanelCard
         }
         if (nFail > 0) {
-            Text("待认证设备", color = Amber, fontSize = 12.sp)
+            Text("Pending clients", color = Amber, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until nFail) {
                 val o = fail?.optJSONObject(idx) ?: continue
                 KV(
-                    o.s("hostname").ifBlank { "未知设备" },
+                    o.s("hostname").ifBlank { "Unknown device" },
                     o.s("mac_address"),
                     Rose
                 )
@@ -556,12 +556,12 @@ private fun SecondAuthCard(state: CpeState) {
             Spacer(Modifier.height(10.dp))
         }
         if (nOk > 0) {
-            Text("已认证设备", color = Mint, fontSize = 12.sp)
+            Text("Authenticated clients", color = Mint, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until nOk) {
                 val o = succ?.optJSONObject(idx) ?: continue
                 KV(
-                    o.s("hostname").ifBlank { "未知设备" },
+                    o.s("hostname").ifBlank { "Unknown device" },
                     o.s("mac_address"),
                     Mint
                 )
@@ -577,21 +577,21 @@ private fun LanCtlCard(state: CpeState) {
     val hosts = state.lanHostname?.optJSONArray("devices")
     val macs = state.macPctrl?.optJSONArray("macs")
     if (hosts == null && macs == null) {
-        PanelCard(title = "LAN 与访问控制", accent = Cyan) {
-            HintBox(state.authErrors[Api.LAN_HOSTNAME.key] ?: "正在读取…", Amber)
+        PanelCard(title = "LAN & access control", accent = Cyan) {
+            HintBox(state.authErrors[Api.LAN_HOSTNAME.key] ?: "Reading…", Amber)
         }
         return
     }
-    PanelCard(title = "LAN 与访问控制", accent = Cyan) {
+    PanelCard(title = "LAN & access control", accent = Cyan) {
         val hn = hosts?.length() ?: 0
-        KV("自定义主机名", if (hn == 0) "无" else "$hn 台设备已改名", if (hn == 0) TextLo else Mint)
+        KV("Custom hostnames", if (hn == 0) "None" else "$hn devices renamed", if (hn == 0) TextLo else Mint)
         if (hn > 0) {
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until minOf(hn, 8)) {
                 val o = hosts?.optJSONObject(idx) ?: continue
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        o.s("hostname").ifBlank { "未命名" },
+                        o.s("hostname").ifBlank { "Unnamed" },
                         color = TextHi, fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 1
                     )
                     Text(o.s("mac"), color = TextMu, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
@@ -602,7 +602,7 @@ private fun LanCtlCard(state: CpeState) {
         PanelDivider()
         Spacer(Modifier.height(10.dp))
         val mn = macs?.length() ?: 0
-        KV("MAC 访问控制条目", if (mn == 0) "未设置" else "$mn 条", if (mn == 0) TextLo else Amber)
+        KV("MAC access entries", if (mn == 0) "Not set" else "$mn", if (mn == 0) TextLo else Amber)
         if (mn > 0) {
             Spacer(Modifier.height(6.dp))
             for (idx in 0 until minOf(mn, 8)) {
@@ -611,7 +611,7 @@ private fun LanCtlCard(state: CpeState) {
             }
         }
         Spacer(Modifier.height(10.dp))
-        HintBox("主机名是你在网页后台改过的设备别名；MAC 访问控制是黑白名单里已生效的条目。", TextLo)
+        HintBox("Hostnames are the aliases you set in the web UI; MAC access entries are the active allow/deny list rules.", TextLo)
     }
 }
 
@@ -635,39 +635,39 @@ private fun rateText(bps: Long): String = when {
     else -> "$bps bps"
 }
 
-/** main_2g -> 主 Wi-Fi 2.4G */
+/** main_2g -> Main Wi-Fi 2.4G */
 private fun sectionLabel(section: String): String = when (section.lowercase()) {
-    "main_2g" -> "主 Wi-Fi · 2.4G"
-    "main_5g" -> "主 Wi-Fi · 5G"
-    "main_6g" -> "主 Wi-Fi · 6G"
-    "guest_2g" -> "访客网络 · 2.4G"
-    "guest_5g" -> "访客网络 · 5G"
-    "guest_6g" -> "访客网络 · 6G"
-    "backhaul_5g" -> "Mesh 回程 · 5G"
-    "backhaul_2g" -> "Mesh 回程 · 2.4G"
-    "backhaul_sta" -> "Mesh 回程（STA）"
-    else -> section.ifBlank { "未知接口" }
+    "main_2g" -> "Main Wi-Fi · 2.4G"
+    "main_5g" -> "Main Wi-Fi · 5G"
+    "main_6g" -> "Main Wi-Fi · 6G"
+    "guest_2g" -> "Guest network · 2.4G"
+    "guest_5g" -> "Guest network · 5G"
+    "guest_6g" -> "Guest network · 6G"
+    "backhaul_5g" -> "Mesh backhaul · 5G"
+    "backhaul_2g" -> "Mesh backhaul · 2.4G"
+    "backhaul_sta" -> "Mesh backhaul (STA)"
+    else -> section.ifBlank { "Unknown interface" }
 }
 
 /** 加密方式代号 -> 人话 */
 private fun encText(enc: String): String = when (enc.lowercase().trim()) {
-    "", "none" -> "开放（无密码）"
+    "", "none" -> "Open (no password)"
     "psk2+ccmp" -> "WPA2-PSK (CCMP)"
     "psk+ccmp" -> "WPA-PSK (CCMP)"
-    "psk-mixed+tkip+ccmp" -> "WPA/WPA2 混合"
+    "psk-mixed+tkip+ccmp" -> "WPA/WPA2 mixed"
     "sae" -> "WPA3-SAE"
-    "sae-mixed" -> "WPA2/WPA3 混合"
-    "owe" -> "WPA3-OWE（增强开放）"
-    "wep" -> "WEP（已过时）"
+    "sae-mixed" -> "WPA2/WPA3 mixed"
+    "owe" -> "WPA3-OWE (enhanced open)"
+    "wep" -> "WEP (legacy)"
     else -> enc
 }
 
 /** 拨号连接方式 */
 private fun connectModeText(mode: Int): String = when (mode) {
-    1 -> "自动拨号"
-    2 -> "手动拨号"
-    3 -> "按需拨号"
-    else -> "方式 $mode"
+    1 -> "Auto"
+    2 -> "Manual"
+    3 -> "On demand"
+    else -> "Mode $mode"
 }
 
 /** PDP 类型 */
@@ -675,40 +675,40 @@ private fun pdpText(t: Int): String = when (t) {
     0 -> "IPv4"
     1 -> "IPv6"
     2 -> "IPv4v6"
-    3 -> "IPv4v6（默认）"
-    else -> "类型 $t"
+    3 -> "IPv4v6 (default)"
+    else -> "Type $t"
 }
 
 /** PPP 鉴权方式 */
 private fun pppAuthText(a: Int): String = when (a) {
-    0 -> "无"
+    0 -> "None"
     1 -> "PAP"
     2 -> "CHAP"
     3 -> "PAP/CHAP"
-    else -> "方式 $a"
+    else -> "Mode $a"
 }
 
 private fun wpsText(s: String): String = when (s.lowercase()) {
-    "idle", "" -> "空闲"
-    "active" -> "配对中"
-    "success" -> "配对成功"
-    "fail" -> "配对失败"
+    "idle", "" -> "Idle"
+    "active" -> "Pairing"
+    "success" -> "Paired"
+    "fail" -> "Failed"
     else -> s
 }
 
 private fun ddnsStatusText(s: String): String = when (s.lowercase()) {
-    "registered" -> "已注册"
-    "not_registered" -> "未注册"
-    "registering" -> "注册中"
-    "fail", "failed" -> "注册失败"
-    "" -> "未知"
+    "registered" -> "Registered"
+    "not_registered" -> "Not registered"
+    "registering" -> "Registering"
+    "fail", "failed" -> "Registration failed"
+    "" -> "Unknown"
     else -> s
 }
 
 private fun tunnelText(s: String): String = when (s.lowercase()) {
-    "connected" -> "已连接"
-    "disconnected" -> "未连接"
-    "connecting" -> "连接中"
-    "" -> "未配置"
+    "connected" -> "Connected"
+    "disconnected" -> "Disconnected"
+    "connecting" -> "Connecting"
+    "" -> "Not configured"
     else -> s
 }
