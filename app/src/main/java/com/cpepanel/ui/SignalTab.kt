@@ -42,15 +42,15 @@ fun SignalTab(state: CpeState) {
     ) {
         item {
             if (samples.size < 2) {
-                PanelCard(title = "信号历史曲线", accent = Cyan) {
+                PanelCard(title = "Signal history", accent = Cyan) {
                     Text(
-                        "正在采集样本…（已采 ${samples.size} 个）\n曲线会随着刷新逐步绘制出来。",
+                        "Collecting samples… (${samples.size} so far)\nThe curve is drawn progressively as data refreshes.",
                         color = TextLo, fontSize = 12.sp, lineHeight = 19.sp
                     )
                 }
             } else {
                 PanelCard(
-                    title = "RSRP 电平趋势",
+                    title = "RSRP trend",
                     accent = Cyan,
                     trailing = { Text(spanLabel(samples), color = TextMu, fontSize = 11.sp) }
                 ) {
@@ -63,10 +63,10 @@ fun SignalTab(state: CpeState) {
                     Spacer(Modifier.height(10.dp))
                     val values = samples.map { it.rsrp }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        StatBlock("当前", "${values.last()} dBm", Cyan)
-                        StatBlock("最低", "${values.min()} dBm", Amber)
-                        StatBlock("最高", "${values.max()} dBm", Mint)
-                        StatBlock("平均", "${values.average().toInt()} dBm", TextHi)
+                        StatBlock("Now", "${values.last()} dBm", Cyan)
+                        StatBlock("Min", "${values.min()} dBm", Amber)
+                        StatBlock("Max", "${values.max()} dBm", Mint)
+                        StatBlock("Avg", "${values.average().toInt()} dBm", TextHi)
                     }
                 }
             }
@@ -75,7 +75,7 @@ fun SignalTab(state: CpeState) {
         item {
             if (samples.size >= 2) {
                 PanelCard(
-                    title = "SINR 信噪比趋势",
+                    title = "SINR trend",
                     accent = Mint,
                     trailing = { Text(spanLabel(samples), color = TextMu, fontSize = 11.sp) }
                 ) {
@@ -88,10 +88,10 @@ fun SignalTab(state: CpeState) {
                     Spacer(Modifier.height(10.dp))
                     val snrs = samples.map { it.snr }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        StatBlock("当前", String.format("%.1f dB", snrs.last()), Mint)
-                        StatBlock("最低", String.format("%.1f dB", snrs.min()), Amber)
-                        StatBlock("最高", String.format("%.1f dB", snrs.max()), Mint)
-                        StatBlock("平均", String.format("%.1f dB", snrs.average()), TextHi)
+                        StatBlock("Now", String.format("%.1f dB", snrs.last()), Mint)
+                        StatBlock("Min", String.format("%.1f dB", snrs.min()), Amber)
+                        StatBlock("Max", String.format("%.1f dB", snrs.max()), Mint)
+                        StatBlock("Avg", String.format("%.1f dB", snrs.average()), TextHi)
                     }
                 }
             }
@@ -102,17 +102,17 @@ fun SignalTab(state: CpeState) {
         item { BandLockCard(net) }
 
         item {
-            PanelCard(title = "怎么读这些数字", accent = Blue) {
+            PanelCard(title = "Reading these numbers", accent = Blue) {
                 Text(
-                    "RSRP（参考信号接收功率）\n" +
-                        "  衡量覆盖强度，单位 dBm，越接近 0 越好。\n" +
-                        "  ≥ -90 优秀，-90 ~ -100 良好，-100 ~ -110 一般，< -110 偏弱。\n\n" +
-                        "SINR（信噪比）\n" +
-                        "  衡量信号干净程度，直接决定能跑多快。\n" +
-                        "  ≥ 20 优秀，13 ~ 20 良好，7 ~ 13 一般，< 7 干扰明显。\n\n" +
-                        "工程经验\n" +
-                        "  RSRP 好但 SINR 差 → 干扰为主，换位置/换朝向往往比换天线有效。\n" +
-                        "  RSRP 和 SINR 都差 → 覆盖不足，考虑外接天线或靠近窗口。",
+                    "RSRP (reference signal received power)\n" +
+                        "  Coverage strength in dBm — closer to 0 is better.\n" +
+                        "  ≥ -90 excellent, -90 to -100 good, -100 to -110 fair, < -110 weak.\n\n" +
+                        "SINR (signal-to-noise ratio)\n" +
+                        "  How clean the signal is; this decides your top speed.\n" +
+                        "  ≥ 20 excellent, 13 to 20 good, 7 to 13 fair, < 7 heavy interference.\n\n" +
+                        "Rules of thumb\n" +
+                        "  Good RSRP but poor SINR → interference dominates; repositioning or re-aiming usually beats a new antenna.\n" +
+                        "  Poor RSRP and poor SINR → weak coverage; consider an external antenna or a spot near a window.",
                     color = TextLo, fontSize = 12.sp, lineHeight = 20.sp
                 )
             }
@@ -124,9 +124,9 @@ fun SignalTab(state: CpeState) {
 private fun NeighborCard(net: JSONObject?) {
     if (net == null) return
     val nbr = net.s("nr_neighbor_cell")
-    PanelCard(title = "5G 邻区", accent = Blue) {
+    PanelCard(title = "5G neighbors", accent = Blue) {
         if (nbr.isBlank()) {
-            HintBox("当前没有读取到邻区信息。", TextLo)
+            HintBox("No neighbor-cell information reported.", TextLo)
             return@PanelCard
         }
         val cells = nbr.split(';').filter { it.isNotBlank() }
@@ -135,12 +135,12 @@ private fun NeighborCard(net: JSONObject?) {
             val pci = parts.getOrNull(0)?.trim().orEmpty()
             val channel = parts.getOrNull(1)?.trim().orEmpty()
             KV(
-                "邻区 ${idx + 1}",
-                "PCI $pci　信道 $channel"
+                "Neighbor ${idx + 1}",
+                "PCI $pci · channel $channel"
             )
         }
         Spacer(Modifier.height(6.dp))
-        HintBox("本机主小区 PCI ${net.s("nr5g_pci")}　信道 ${net.s("nr5g_action_channel")}", TextMu)
+        HintBox("Serving cell PCI ${net.s("nr5g_pci")} · channel ${net.s("nr5g_action_channel")}", TextMu)
     }
 }
 
@@ -151,47 +151,47 @@ private fun NeighborCard(net: JSONObject?) {
 @Composable
 private fun BandLockCard(net: JSONObject?) {
     if (net == null) return
-    PanelCard(title = "频段与小区", accent = Violet) {
-        KV("网络制式", networkTypeText(net.s("network_type")))
-        KV("驻网方式", "${net.s("net_select")} / ${net.s("net_select_mode")}")
-        KV("域状态", net.s("domain_stat"))
-        KV("运营商", carrierName(net.s("network_provider"), net.s("network_provider_fullname")))
+    PanelCard(title = "Band & cell", accent = Violet) {
+        KV("Network mode", networkTypeText(net.s("network_type")))
+        KV("Registration", "${net.s("net_select")} / ${net.s("net_select_mode")}")
+        KV("Domain state", net.s("domain_stat"))
+        KV("Carrier", carrierName(net.s("network_provider"), net.s("network_provider_fullname")))
 
         Spacer(Modifier.height(8.dp))
-        KV("当前频段", net.s("wan_active_band"), Cyan)
+        KV("Current band", net.s("wan_active_band"), Cyan)
         val bw = net.s("nr5g_bandwidth")
-        if (bw.isNotBlank()) KV("NR 频宽", "$bw MHz")
-        KV("小区 ID", net.s("nr5g_cell_id"))
+        if (bw.isNotBlank()) KV("NR bandwidth", "$bw MHz")
+        KV("Cell ID", net.s("nr5g_cell_id"))
         KV("PCI", net.s("nr5g_pci"))
-        KV("信道号", net.s("nr5g_action_channel"))
+        KV("Channel", net.s("nr5g_action_channel"))
         KV("LAC", net.s("lac_code"))
 
         Spacer(Modifier.height(8.dp))
-        Text("频段能力与锁定", color = TextLo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text("Band capability & locks", color = TextLo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(2.dp))
         val lteBand = net.s("lte_band")
-        if (lteBand.isNotBlank()) KV("LTE 频段", lteBand)
+        if (lteBand.isNotBlank()) KV("LTE bands", lteBand)
         val nrSa = net.s("nr5g_sa_band_lock")
-        if (nrSa.isNotBlank()) KV("NR SA 频段", nrSa)
+        if (nrSa.isNotBlank()) KV("NR SA bands", nrSa)
         val gwLock = net.s("gw_band_lock")
-        if (gwLock.isNotBlank()) KV("锁定掩码 (GW)", gwLock)
+        if (gwLock.isNotBlank()) KV("Lock mask (GW)", gwLock)
         val lteLock = net.s("lte_band_lock")
-        if (lteLock.isNotBlank()) KV("锁定掩码 (LTE)", lteLock)
+        if (lteLock.isNotBlank()) KV("Lock mask (LTE)", lteLock)
         val nsaLock = net.s("nr5g_nsa_band_lock")
-        if (nsaLock.isNotBlank()) KV("锁定掩码 (NR NSA)", nsaLock)
+        if (nsaLock.isNotBlank()) KV("Lock mask (NR NSA)", nsaLock)
 
         val lockNr = net.s("lock_nr_cell")
         val lockLte = net.s("lock_lte_cell")
         if (lockNr.isNotBlank() || lockLte.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
-            KV("锁定的 NR 小区", lockNr.ifBlank { "无" }, Amber)
-            KV("锁定的 LTE 小区", lockLte.ifBlank { "无" }, Amber)
+            KV("Locked NR cell", lockNr.ifBlank { "None" }, Amber)
+            KV("Locked LTE cell", lockLte.ifBlank { "None" }, Amber)
         }
 
         Spacer(Modifier.height(10.dp))
         HintBox(
-            "频段掩码是设备上报的十六进制位图，每一位对应一个频段；" +
-                "如果你在网页后台锁过频段，这里会与那边一致。App 只读不改。",
+            "Band masks are hex bitmaps reported by the device, one bit per band; " +
+                "if you locked bands in the web UI, this matches it. The app is read-only here.",
             TextLo
         )
     }
@@ -218,7 +218,7 @@ private fun spanLabel(samples: List<SignalSample>): String {
     val sec = ((samples.last().t - samples.first().t) / 1000L).coerceAtLeast(0L)
     return when {
         sec >= 3600 -> "${sec / 3600}h${(sec % 3600) / 60}m"
-        sec >= 60 -> "${sec / 60}分${sec % 60}秒"
-        else -> "${sec}秒"
+        sec >= 60 -> "${sec / 60}m${sec % 60}s"
+        else -> "${sec}s"
     }
 }
