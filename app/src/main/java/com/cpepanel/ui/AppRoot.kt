@@ -51,7 +51,7 @@ import com.cpepanel.ui.theme.TextHi
 import com.cpepanel.ui.theme.TextLo
 import com.cpepanel.ui.theme.TextMu
 
-private val TAB_TITLES = listOf("仪表盘", "信号", "网络", "短信", "设备", "设置")
+private val TAB_TITLES = listOf("Dashboard", "Signal", "Network", "SMS", "Device", "Settings")
 
 @Composable
 fun AppRoot(state: CpeState, sms: SmsUiState, vm: CpeViewModel) {
@@ -157,7 +157,7 @@ private fun TabIcon(index: Int, selected: Boolean) {
             3 -> IconMessage(tint)
             4 -> IconChip(tint)
             else -> Icon(
-                Icons.Filled.Settings, contentDescription = "设置",
+                Icons.Filled.Settings, contentDescription = "Settings",
                 tint = tint, modifier = Modifier.size(22.dp)
             )
         }
@@ -167,9 +167,9 @@ private fun TabIcon(index: Int, selected: Boolean) {
 @Composable
 private fun PanelHeader(state: CpeState, onRefresh: () -> Unit, onLoginClick: () -> Unit) {
     val (dotColor, statusText) = when (state.status) {
-        ConnStatus.Online -> Mint to "在线"
-        ConnStatus.Connecting, ConnStatus.Idle -> Amber to "连接中"
-        ConnStatus.Offline -> Rose to "离线"
+        ConnStatus.Online -> Mint to "Online"
+        ConnStatus.Connecting, ConnStatus.Idle -> Amber to "Connecting"
+        ConnStatus.Offline -> Rose to "Offline"
     }
 
     Column(
@@ -180,7 +180,7 @@ private fun PanelHeader(state: CpeState, onRefresh: () -> Unit, onLoginClick: ()
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
-                Text("CPE 网络面板", color = TextHi, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text("CPE Network Panel", color = TextHi, fontSize = 19.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusDot(dotColor)
@@ -191,13 +191,13 @@ private fun PanelHeader(state: CpeState, onRefresh: () -> Unit, onLoginClick: ()
                     )
                     if (state.status == ConnStatus.Online && state.latencyMs >= 0) {
                         Text(
-                            "　${state.latencyMs}ms",
+                            "  ${state.latencyMs}ms",
                             color = TextMu, fontSize = 11.sp, fontFamily = FontFamily.Monospace
                         )
                     }
                     if (state.lastUpdated > 0) {
                         Text(
-                            "　更新于 ${timeText(state.lastUpdated)}",
+                            "  Updated ${timeText(state.lastUpdated)}",
                             color = TextMu, fontSize = 11.sp
                         )
                     }
@@ -226,7 +226,7 @@ private fun PanelHeader(state: CpeState, onRefresh: () -> Unit, onLoginClick: ()
 @Composable
 private fun StatusPill(loggedIn: Boolean, onClick: () -> Unit) {
     val color: Color = if (loggedIn) Mint else Amber
-    val label = if (loggedIn) "已登录" else "未登录"
+    val label = if (loggedIn) "Signed in" else "Signed out"
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
