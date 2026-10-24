@@ -290,7 +290,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                 }
             } catch (t: Throwable) {
                 free.remove(m.key)
-                freeErr[m.key] = t.message ?: "未知错误"
+                freeErr[m.key] = t.message ?: "Unknown error"
             }
         }
 
@@ -330,7 +330,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                     if (m.key == Api.WEB_INFO.key && e.needsLogin) webInfoDenied = true
                 } catch (t: Throwable) {
                     auth.remove(m.key)
-                    authErr[m.key] = t.message ?: "未知错误"
+                    authErr[m.key] = t.message ?: "Unknown error"
                     android.util.Log.w("CpePanel", "auth EXC ${m.key} ${t}")
                 }
             }
@@ -356,13 +356,16 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         if (webInfoDeniedStrikes >= 2) {
             val n = webInfoDeniedStrikes
             webInfoDeniedStrikes = 0
-            android.util.Log.w("CpePanel", "sessionDead -> resetSession（连续 $n 个周期 web_info 判定会话失效，且其它鉴权接口全失败）")
+            android.util.Log.w("CpePanel", "sessionDead -> resetSession (web_info denied for $n consecutive cycles and every other auth call failed)")
             client.resetSession()
             prefs.sessionToken = ""
+            // 会话已死，短信属于上一个会话；不清掉的话 sms.loaded 仍为 true，
+            // 下次登录后 SmsTab 的 LaunchedEffect 会认为“已加载过”而不再拉取。
+            _sms.value = SmsUiState()
         } else if (webInfoDenied) {
             android.util.Log.w(
                 "CpePanel",
-                "web_info 返回 -32002，但本轮成功 $authOkCount 个鉴权接口 —— 判定为偶发抖动，保留会话（strike=$webInfoDeniedStrikes）"
+                "web_info returned -32002 but $authOkCount auth calls succeeded this cycle — treating it as jitter, keeping session (strike=$webInfoDeniedStrikes)"
             )
         }
 
@@ -413,7 +416,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun login(password: String) {
         if (password.isEmpty()) {
-            _state.update { it.copy(toast = "请输入管理密码") }
+            _state.update { it.copy(toast = "Enter the admin password") }
             return
         }
         viewModelScope.launch {
@@ -422,13 +425,18 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                 try {
                     client.login(password)
                 } catch (t: Throwable) {
-                    UbusClient.LoginResult(false, t.message ?: "登录请求失败")
+                    UbusClient.LoginResult(false, t.message ?: "Sign-in request failed")
                 }
             }
             if (res.ok) {
                 prefs.sessionToken = res.session
-                _state.update { it.copy(busy = false, loggedIn = true, toast = "登录成功") }
+                _state.update { it.copy(busy = false, loggedIn = true, toast = "Signed in") }
                 refreshNow()
+                // 底部导航的未读角标读的是 sms.unread，而短信列表默认只在进入短信页
+                // 时才拉取 —— 不进短信页就永远看不到角标。这里借登录这个一次性时机
+                // 拉一遍完整列表（几十 KB），不把它挂进轮询。
+                _sms.value = SmsUiState()
+                loadSms()
             } else {
                 _state.update { it.copy(busy = false, toast = res.message) }
             }
@@ -444,6 +452,8 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
             prefs.sessionToken = ""
             prefs.webToken = ""
             webInfoDeniedStrikes = 0
+            // 退出即丢弃短信：既避免残留在内存里，也让下次登录能重新拉取
+            _sms.value = SmsUiState()
             _state.update {
                 it.copy(
                     loggedIn = false,
@@ -452,7 +462,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                     authProbed = false,
                     cryptoReady = false,
                     wifiKeys = emptyMap(),
-                    toast = "已退出登录"
+                    toast = "Signed out"
                 )
             }
         }
@@ -465,6 +475,9 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         prefs.baseUrl = normalized
         prefs.sessionToken = ""
         prefs.webToken = ""
+        // 换了设备，旧设备的短信绝不能继续展示；同时 sms.loaded 归零，
+        // 保证新设备登录后短信页会重新拉取。
+        _sms.value = SmsUiState()
         viewModelScope.launch {
             withContext(Dispatchers.IO) { client.setBaseUrl(normalized) }
             _state.update {
@@ -480,7 +493,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                     wifiKeys = emptyMap(),
                     samples = emptyList(),
                     status = ConnStatus.Connecting,
-                    toast = "地址已切换为 ${client.baseUrl}"
+                    toast = "Address switched to ${client.baseUrl}"
                 )
             }
             refreshOnce(forceSlow = true)
@@ -496,7 +509,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
     fun setNegotiateCrypto(on: Boolean) {
         prefs.negotiateCrypto = on
         client.negotiateSessionCrypto = on
-        _state.update { it.copy(negotiateCrypto = on, toast = if (on) "会话加密协商已开启（下次登录生效）" else "会话加密协商已关闭") }
+        _state.update { it.copy(negotiateCrypto = on, toast = if (on) "Session encryption enabled (applies at next sign-in)" else "Session encryption disabled") }
     }
 
     fun consumeToast() {
@@ -513,7 +526,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun loadSms() {
         if (!client.isLoggedIn) {
-            _sms.update { it.copy(loading = false, error = "需要先登录管理后台才能读取短信", loaded = true) }
+            _sms.update { it.copy(loading = false, error = "Sign in to the admin panel to read SMS", loaded = true) }
             return
         }
         viewModelScope.launch {
@@ -543,7 +556,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
             }.onFailure { t ->
-                _sms.update { it.copy(loading = false, loaded = true, error = t.message ?: "读取短信失败") }
+                _sms.update { it.copy(loading = false, loaded = true, error = t.message ?: "Couldn't load SMS") }
             }
         }
     }
@@ -582,13 +595,13 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         val num = number.trim()
         val body = text.trim()
         if (num.isEmpty()) {
-            _sms.update { it.copy(toast = "请填写接收号码") }; onDone(false, "请填写接收号码"); return
+            _sms.update { it.copy(toast = "Enter a recipient number") }; onDone(false, "Enter a recipient number"); return
         }
         if (body.isEmpty()) {
-            _sms.update { it.copy(toast = "短信内容不能为空") }; onDone(false, "短信内容不能为空"); return
+            _sms.update { it.copy(toast = "Message can't be empty") }; onDone(false, "Message can't be empty"); return
         }
         if (!client.isLoggedIn) {
-            _sms.update { it.copy(toast = "需要先登录才能发送短信") }; onDone(false, "需要先登录"); return
+            _sms.update { it.copy(toast = "Sign in to send SMS") }; onDone(false, "Sign in first"); return
         }
         viewModelScope.launch {
             _sms.update { it.copy(sending = true) }
@@ -609,8 +622,8 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         }.getOrNull()
         when (ready?.opt("sms_cmd_status_result")?.toString()) {
             "3" -> Unit
-            "1", "0", null -> return false to "短信服务尚未就绪，请稍后重试"
-            else -> return false to "短信服务初始化失败，无法发送"
+            "1", "0", null -> return false to "SMS service isn't ready yet, try again shortly"
+            else -> return false to "SMS service failed to initialise; can't send"
         }
 
         val args = JSONObject()
@@ -621,14 +634,14 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
             .put("encode_type", SmsCodec.encodeType(text))
         val res = runCatching {
             client.call(Api.Write.SMS_SEND.obj, Api.Write.SMS_SEND.name, args)
-        }.getOrElse { return false to (it.message ?: "发送请求失败") }
+        }.getOrElse { return false to (it.message ?: "Send request failed") }
         // 真机契约：result=3 受理、2 拒绝（空号码/非法号码）。这里只信设备返回值。
-        if (res.writeAccepted() == false) return false to "设备拒绝了发送请求，请检查号码"
+        if (res.writeAccepted() == false) return false to "The device rejected the send request; check the number"
 
         return when (pollCmd(4, 12, 900)) {
-            true -> true to "短信已发送"
-            false -> false to "发送失败：请检查号码或信号后重试"
-            else -> true to "已提交发送（设备未及时回执，可在会话里确认）"
+            true -> true to "SMS sent"
+            false -> false to "Send failed: check the number or signal and retry"
+            else -> true to "Submitted (no receipt from the device yet — check the conversation)"
         }
     }
 
@@ -661,7 +674,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun deleteSms(ids: List<Int>, onDone: (Boolean, String) -> Unit = { _, _ -> }) {
         if (ids.isEmpty()) return
-        if (!client.isLoggedIn) { onDone(false, "需要先登录"); return }
+        if (!client.isLoggedIn) { onDone(false, "Sign in first"); return }
         viewModelScope.launch {
             val r = withContext(Dispatchers.IO) {
                 val joined = ids.joinToString(";") + ";"
@@ -670,14 +683,14 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                         Api.Write.SMS_DELETE.obj, Api.Write.SMS_DELETE.name,
                         JSONObject().put("id", joined)
                     )
-                }.getOrElse { return@withContext false to (it.message ?: "删除失败") }
+                }.getOrElse { return@withContext false to (it.message ?: "Delete request failed") }
                 if (res.writeAccepted() == false) {
-                    return@withContext false to "设备拒绝了删除请求"
+                    return@withContext false to "The device rejected the delete request"
                 }
                 when (pollCmd(6, 8, 700)) {
-                    false -> false to "删除失败"
-                    null -> true to "已提交删除"
-                    else -> true to "已删除"
+                    false -> false to "Delete failed"
+                    null -> true to "Delete submitted"
+                    else -> true to "Deleted"
                 }
             }
             _sms.update { it.copy(toast = r.second) }
@@ -701,7 +714,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
      *    因此等几秒再补一次全量刷新。
      */
     fun switchSimSlot(slot: Int, onDone: (Boolean, String) -> Unit = { _, _ -> }) {
-        if (!client.isLoggedIn) { onDone(false, "需要先登录"); return }
+        if (!client.isLoggedIn) { onDone(false, "Sign in first"); return }
         viewModelScope.launch {
             _state.update { it.copy(busy = true) }
             val r = withContext(Dispatchers.IO) {
@@ -711,12 +724,12 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                         JSONObject().put("slot", slot)
                     )
                 }.getOrElse {
-                    return@withContext false to (it.message ?: "切换请求失败")
+                    return@withContext false to (it.message ?: "Switch request failed")
                 }
                 // 真机实测：切卡成功时响应体是空的（连 result 字段都没有），
                 // 只有参数非法才会抛 status 2。所以走到这里就说明设备受理了。
                 if (res.writeAccepted() == false) {
-                    return@withContext false to "设备拒绝了切换请求"
+                    return@withContext false to "The device rejected the switch request"
                 }
                 // 受理不等于切好了 —— modem 要重新注册网络，轮询确认真实卡槽
                 var landed: String? = null
@@ -731,9 +744,9 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
                     if (landed == slot.toString()) break
                 }
                 when {
-                    landed == slot.toString() -> true to "已切换到卡槽 $slot"
-                    landed.isNullOrBlank() -> true to "已提交切换（设备暂未回读卡槽，请下拉刷新确认）"
-                    else -> true to "切换指令已受理，但设备当前卡槽仍为 $landed"
+                    landed == slot.toString() -> true to "Switched to SIM slot $slot"
+                    landed.isNullOrBlank() -> true to "Switch submitted (slot not read back yet — refresh to confirm)"
+                    else -> true to "Switch accepted, but the device is still on slot $landed"
                 }
             }
             _state.update { it.copy(busy = false, toast = r.second) }
