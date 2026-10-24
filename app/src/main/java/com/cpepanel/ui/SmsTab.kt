@@ -91,10 +91,10 @@ fun SmsTab(
 
     if (!state.loggedIn) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            PanelCard(title = "短信", accent = Blue) {
-                HintBox("短信的读取与发送都需要登录管理后台。", Amber)
+            PanelCard(title = "SMS", accent = Blue) {
+                HintBox("Reading and sending SMS both require an admin sign-in.", Amber)
                 Spacer(Modifier.height(12.dp))
-                Btn("去登录", Cyan) { onLoginClick() }
+                Btn("Sign in", Cyan) { onLoginClick() }
             }
         }
         return
@@ -136,13 +136,13 @@ fun SmsTab(
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
             containerColor = Panel,
-            title = { Text("删除该会话的全部短信？", color = TextHi, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+            title = { Text("Delete all messages in this conversation?", color = TextHi, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column {
                     Text(num, color = Cyan, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "将删除 ${ids.size} 条短信，操作直接作用于设备，无法撤销。",
+                        "This deletes ${ids.size} messages on the device and cannot be undone.",
                         color = TextLo, fontSize = 12.sp, lineHeight = 18.sp
                     )
                 }
@@ -152,10 +152,10 @@ fun SmsTab(
                     onDelete(ids)
                     confirmDelete = null
                     openNumber = null
-                }) { Text("删除", color = Rose, fontSize = 14.sp) }
+                }) { Text("Delete", color = Rose, fontSize = 14.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = null }) { Text("取消", color = TextLo, fontSize = 14.sp) }
+                TextButton(onClick = { confirmDelete = null }) { Text("Cancel", color = TextLo, fontSize = 14.sp) }
             }
         )
     }
@@ -190,32 +190,32 @@ private fun ThreadListPane(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("＋", color = Cyan, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("+", color = Cyan, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
-                Text("新建短信", color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text("New message", color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
         if (sms.loading && !sms.loaded) {
             item {
-                PanelCard(title = "短信列表", accent = Blue) { HintBox("正在读取短信…", Amber) }
+                PanelCard(title = "Messages", accent = Blue) { HintBox("Reading messages…", Amber) }
             }
         }
 
         sms.error?.let { err ->
             item {
-                PanelCard(title = "短信列表", accent = Rose) {
+                PanelCard(title = "Messages", accent = Rose) {
                     HintBox(err, Rose)
                     Spacer(Modifier.height(12.dp))
-                    Btn("重试", Cyan) { onLoad() }
+                    Btn("Retry", Cyan) { onLoad() }
                 }
             }
         }
 
         if (sms.empty) {
             item {
-                PanelCard(title = "短信列表", accent = Blue) {
-                    HintBox("设备上还没有短信。点上面的「新建短信」可以发送第一条。", TextLo)
+                PanelCard(title = "Messages", accent = Blue) {
+                    HintBox("No messages on the device yet. Tap “New message” above to send the first one.", TextLo)
                 }
             }
         }
@@ -227,8 +227,8 @@ private fun ThreadListPane(
         if (sms.threads.isNotEmpty()) {
             item {
                 HintBox(
-                    "短信正文由设备以 UTF-16BE 十六进制下发，在手机本地解码后展示，不经过任何第三方服务。\n" +
-                        "列表按号码聚合，点进去可以看到完整往来记录。",
+                    "Message bodies arrive from the device as UTF-16BE hex, are decoded locally on your phone, and never pass through a third-party service.\n" +
+                        "Messages are grouped by number; open one to see the full history.",
                     TextMu
                 )
             }
@@ -274,12 +274,12 @@ private fun ThreadRow(t: SmsThread, onOpen: () -> Unit, onDelete: () -> Unit) {
 
         Row(verticalAlignment = Alignment.Top) {
             when {
-                latest.failed -> { Pill("发送失败", Rose); Spacer(Modifier.width(7.dp)) }
-                latest.draft -> { Pill("草稿", Amber); Spacer(Modifier.width(7.dp)) }
-                latest.outgoing -> { Pill("已发送", Mint); Spacer(Modifier.width(7.dp)) }
+                latest.failed -> { Pill("Failed", Rose); Spacer(Modifier.width(7.dp)) }
+                latest.draft -> { Pill("Draft", Amber); Spacer(Modifier.width(7.dp)) }
+                latest.outgoing -> { Pill("Sent", Mint); Spacer(Modifier.width(7.dp)) }
             }
             Text(
-                latest.content.replace("\n", " ").ifBlank { "（空消息）" },
+                latest.content.replace("\n", " ").ifBlank { "(empty message)" },
                 color = TextLo, fontSize = 13.sp, lineHeight = 19.sp,
                 maxLines = 2,
                 modifier = Modifier.weight(1f)
@@ -289,9 +289,9 @@ private fun ThreadRow(t: SmsThread, onOpen: () -> Unit, onDelete: () -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("共 ${t.count} 条", color = TextMu, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            Text("${t.count} messages", color = TextMu, fontSize = 11.sp, modifier = Modifier.weight(1f))
             TextButton(onClick = onDelete) {
-                Text("删除", color = Rose, fontSize = 12.sp)
+                Text("Delete", color = Rose, fontSize = 12.sp)
             }
         }
     }
@@ -301,34 +301,34 @@ private fun ThreadRow(t: SmsThread, onOpen: () -> Unit, onDelete: () -> Unit) {
 private fun CapacityCard(state: CpeState, sms: SmsUiState, onLoad: () -> Unit) {
     val cap = sms.capacity ?: state.smsCapacity
     PanelCard(
-        title = "短信",
+        title = "SMS",
         accent = Blue,
         trailing = {
             TextButton(onClick = onLoad, enabled = !sms.loading) {
-                Text(if (sms.loading) "刷新中…" else "刷新", color = if (sms.loading) TextMu else Cyan, fontSize = 12.sp)
+                Text(if (sms.loading) "Refreshing…" else "Refresh", color = if (sms.loading) TextMu else Cyan, fontSize = 12.sp)
             }
         }
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricTile("短信总数", "${sms.total}", "条", Cyan, Modifier.weight(1f))
-            MetricTile("未读", "${sms.unread}", "条", if (sms.unread > 0) Amber else Mint, Modifier.weight(1f))
-            MetricTile("会话", "${sms.threads.size}", "个", Violet, Modifier.weight(1f))
+            MetricTile("Total", "${sms.total}", "", Cyan, Modifier.weight(1f))
+            MetricTile("Unread", "${sms.unread}", "", if (sms.unread > 0) Amber else Mint, Modifier.weight(1f))
+            MetricTile("Threads", "${sms.threads.size}", "", Violet, Modifier.weight(1f))
         }
         cap?.let { c ->
             Spacer(Modifier.height(10.dp))
             val used = c.optInt("sms_nv_rev_total") + c.optInt("sms_nv_send_total") + c.optInt("sms_nv_draftbox_total")
-            KV("设备已用 / 容量", "$used / ${c.optInt("sms_nv_total")} 条")
-            KV("SIM 卡容量", "${c.optInt("sms_sim_total")} 条")
-            KV("存储位置", "设备内部")
+            KV("Device used / capacity", "$used / ${c.optInt("sms_nv_total")}")
+            KV("SIM capacity", "${c.optInt("sms_sim_total")}")
+            KV("Storage", "Internal")
         }
         state.smsParam?.let { p ->
             Spacer(Modifier.height(6.dp))
-            KV("短信中心号", p.optString("sca"))
-            KV("状态报告", if (p.optInt("status_report_on") != 0) "已开启" else "已关闭")
+            KV("SMSC", p.optString("sca"))
+            KV("Delivery reports", if (p.optInt("status_report_on") != 0) "On" else "Off")
         }
         if (cap == null) {
             Spacer(Modifier.height(8.dp))
-            HintBox("正在读取容量信息…", TextLo)
+            HintBox("Reading capacity…", TextLo)
         }
     }
 }
@@ -356,16 +356,16 @@ private fun ConversationPane(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onBack) { Text("‹ 返回", color = Cyan, fontSize = 13.sp) }
+            TextButton(onClick = onBack) { Text("‹ Back", color = Cyan, fontSize = 13.sp) }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     thread.number,
                     color = TextHi, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                     fontFamily = FontFamily.Monospace, maxLines = 1
                 )
-                Text("共 ${thread.count} 条", color = TextMu, fontSize = 10.sp)
+                Text("${thread.count} messages", color = TextMu, fontSize = 10.sp)
             }
-            TextButton(onClick = onDeleteAll) { Text("删除", color = Rose, fontSize = 13.sp) }
+            TextButton(onClick = onDeleteAll) { Text("Delete", color = Rose, fontSize = 13.sp) }
         }
 
         LazyColumn(
@@ -397,19 +397,19 @@ private fun ConversationPane(
                     unfocusedBorderColor = Stroke,
                     cursorColor = Cyan
                 ),
-                placeholder = { Text("输入短信内容", color = TextMu, fontSize = 13.sp) }
+                placeholder = { Text("Type a message", color = TextMu, fontSize = 13.sp) }
             )
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (input.isNotEmpty()) {
                     Text(
-                        "${cnt.length} 字 · ${cnt.parts} 条 · ${if (cnt.unicode) "UCS2" else "GSM7"}",
+                        "${cnt.length} chars · ${cnt.parts} parts · ${if (cnt.unicode) "UCS2" else "GSM7"}",
                         color = TextMu, fontSize = 11.sp
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 Btn(
-                    if (sending) "发送中…" else "发送",
+                    if (sending) "Sending…" else "Send",
                     if (sending || input.isBlank()) TextMu else Cyan,
                     enabled = !sending && input.isNotBlank()
                 ) {
@@ -445,14 +445,14 @@ private fun Bubble(m: SmsMessage) {
                 )
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            Text(m.content.ifBlank { "（空消息）" }, color = TextHi, fontSize = 13.sp, lineHeight = 19.sp)
+            Text(m.content.ifBlank { "(empty message)" }, color = TextHi, fontSize = 13.sp, lineHeight = 19.sp)
             Spacer(Modifier.height(5.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (m.failed) {
-                    Text("发送失败", color = Rose, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Failed", color = Rose, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.width(6.dp))
                 } else if (m.draft) {
-                    Text("草稿", color = Amber, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Draft", color = Amber, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.width(6.dp))
                 }
                 Text(m.timeText, color = TextMu, fontSize = 10.sp)
@@ -484,9 +484,9 @@ private fun ComposePane(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onBack) { Text("‹ 返回", color = Cyan, fontSize = 13.sp) }
+            TextButton(onClick = onBack) { Text("‹ Back", color = Cyan, fontSize = 13.sp) }
             Text(
-                "新建短信", color = TextHi, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                "New message", color = TextHi, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(56.dp))
@@ -512,7 +512,7 @@ private fun ComposePane(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Cyan, unfocusedBorderColor = Stroke, cursorColor = Cyan
                 ),
-                label = { Text("接收号码", color = TextMu, fontSize = 12.sp) }
+                label = { Text("Recipient", color = TextMu, fontSize = 12.sp) }
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
@@ -526,20 +526,20 @@ private fun ComposePane(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Cyan, unfocusedBorderColor = Stroke, cursorColor = Cyan
                 ),
-                label = { Text("短信内容", color = TextMu, fontSize = 12.sp) }
+                label = { Text("Message", color = TextMu, fontSize = 12.sp) }
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "${cnt.length} 字 · ${cnt.parts} 条 · ${if (cnt.unicode) "UCS2" else "GSM7"}",
+                "${cnt.length} chars · ${cnt.parts} parts · ${if (cnt.unicode) "UCS2" else "GSM7"}",
                 color = TextMu, fontSize = 11.sp
             )
             if (bodyHexPreview.isNotEmpty()) {
                 Spacer(Modifier.height(2.dp))
-                Text("编码后 $bodyHexPreview", color = TextMu, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                Text("Encoded $bodyHexPreview", color = TextMu, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
             }
             Spacer(Modifier.height(18.dp))
             Btn(
-                if (sending) "发送中…" else "发送",
+                if (sending) "Sending…" else "Send",
                 if (sending || number.isBlank() || body.isBlank()) TextMu else Cyan,
                 enabled = !sending && number.isNotBlank() && body.isNotBlank()
             ) {
@@ -547,10 +547,10 @@ private fun ComposePane(
             }
             Spacer(Modifier.height(14.dp))
             HintBox(
-                "短信由设备上的 SIM 卡直接发出，会产生运营商短信费用。\n" +
-                    "正文会按设备要求编码成 UTF-16BE 十六进制，并标注 GSM7 / UCS2 类型；" +
-                    "中文按 UCS2 计，单条上限 70 字，超出会自动分条。\n" +
-                    "本应用不做自动重试，避免一次点击发出多条。",
+                "Messages are sent from the SIM card in the device and incur carrier SMS charges.\n" +
+                    "The body is encoded as UTF-16BE hex with a GSM7 / UCS2 tag as the device expects; " +
+                    "Chinese text counts as UCS2, limited to 70 characters per part, and longer text is split automatically.\n" +
+                    "This app never retries automatically, so one tap cannot send duplicates.",
                 TextMu
             )
         }
