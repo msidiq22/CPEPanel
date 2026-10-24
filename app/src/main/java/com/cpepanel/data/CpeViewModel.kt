@@ -237,6 +237,23 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * 根据 HA 端口中按“变化速度 + 成本”拆分的轮询分组，保证重要接口更新及时，
+     * 低频/高成本接口不爆掉小路由器 CPU 与 httpd。SMS 只在按需页中使用，不放进心跳轮询。
+     */
+    private fun authPlan(): List<UbusMethod> =
+        (Api.FAST_POLL + Api.CORE_POLL + Api.MONTHLY_POLL)
+            .filter { it.requiresLogin }
+            .distinctBy { it.key }
+
+    private fun due(m: UbusMethod, wantT1: Boolean, wantT2: Boolean): Boolean = when {
+        m in Api.SMS_POLL -> false
+        m in Api.FAST_POLL -> true
+        m in Api.CORE_POLL -> wantT1
+        m in Api.MONTHLY_POLL -> wantT2
+        else -> true
+    }
+
+    /**
      * 刷新入口：先取互斥锁，保证任何时刻只有一个刷新周期在跑。
      * 这样请求之间永远不会交错，每个请求发出时带的都是当时最新的 webtoken
      * —— 设备每响应一次就轮换一次 webtoken 且只认最新值，交错发请求会互相踩掉。
@@ -246,23 +263,16 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * 一次刷新周期，分层轮询（接口总数已扩到 50+，必须分层，否则打挂设备上那台小 httpd）：
-     *  - tier0：每周期都打（信号 / WAN / 实时速率 / 终端数）
-     *  - tier1：每 T1_EVERY 个周期（本月流量、终端明细、Wi-Fi 接口表…）
-     *  - tier2：每 T2_EVERY 个周期（温控 / APN / VPN / DDNS / 短信容量…基本不变）
+     *  - FAST_POLL：每周期都打（信号 / WAN / 实时速率 / 终端数）
+     *  - CORE_POLL：每 T1_EVERY 个周期（本月流量、终端明细、Wi‑Fi 接口表…）
+     *  - MONTHLY_POLL：每 T2_EVERY 个周期（温控 / APN / VPN / DDNS / 短信容量…基本不变）
      * 未到节奏的接口【保留上一轮结果】不清空，UI 不会闪空。
      */
     private suspend fun refreshPass(forceSlow: Boolean) = withContext(Dispatchers.IO) {
         cycle += 1
         val wantT1 = forceSlow || cycle == 1 || cycle % T1_EVERY == 0
         val wantT2 = forceSlow || cycle == 1 || cycle % T2_EVERY == 0
-        // 按刷新分层的节奏决定本周期该打哪些接口：
-        // tier0 每周期、tier1 每 T1_EVERY 周期、tier2 每 T2_EVERY 周期。
-        // 全量接口已有 50+ 个，若每周期都打会把这台小 httpd 打挂。
-        fun due(m: UbusMethod) = when (m.tier) {
-            0 -> true
-            1 -> wantT1
-            else -> wantT2
-        }
+
         val prev = _state.value
 
         val free = LinkedHashMap(prev.free)
@@ -272,7 +282,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         var transportMsg: String? = null
 
         for (m in Api.FREE) {
-            if (!due(m)) continue
+            if (!due(m, wantT1, wantT2)) continue
             val t0 = System.currentTimeMillis()
             try {
                 free[m.key] = client.call(m.obj, m.name, m.args())
@@ -312,13 +322,11 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
         var webInfoDenied = false
         var webInfoRan = false
         var authOkCount = 0
-        var authTried = 0
 
         if (client.isLoggedIn) {
-            for (m in Api.AUTH) {
-                if (!due(m)) continue          // 本轮节奏之外的接口：保留上一轮结果，不打
+            for (m in authPlan()) {
+                if (!due(m, wantT1, wantT2)) continue
                 if (m.key == Api.WEB_INFO.key) webInfoRan = true
-                authTried += 1
                 try {
                     auth[m.key] = client.call(m.obj, m.name, m.args())
                     authErr.remove(m.key)
@@ -343,9 +351,6 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
          *    那就是并发窗口里的偶发 -32002）；且
          *  - 连续 2 个周期都如此，才认为真的掉线。
          */
-        // 只有 web_info 本轮【真的打了】才更新 strikes，否则保持上一轮的值。
-        // 否则 web_info 每 T1_EVERY 个周期才跑一次，strikes 会被中间那些周期反复清零，
-        // 「连续 2 个周期」永远凑不齐。
         if (webInfoRan) {
             if (webInfoDenied && authOkCount == 0) {
                 webInfoDeniedStrikes += 1
@@ -636,7 +641,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
      * 轮询写操作结果。`sms_cmd_status_result`：3 = 成功，2 = 失败，其它 = 仍在进行。
      *
      * @return true 成功 / false 失败 / null 超时
-     * 超时【不报失败】—— 设备已经接受了请求，此时谎报失败会让用户重复发送。
+     * 超时【不报失败】—— 设备已经接受了请求，此时谎报失败会让��户重复发送。
      */
     private suspend fun pollCmd(cmd: Int, tries: Int, gapMs: Long): Boolean? {
         repeat(tries) {
@@ -749,7 +754,7 @@ class CpeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private companion object {
-        /** tier=1 接口（变化较慢：本月流量、终端明细、Wi-Fi 接口表…）每 N 个周期刷新 */
+        /** tier=1 接口（变化较慢：本月流量、终端明细、Wi‑Fi 接口表…）每 N 个周期刷新 */
         const val T1_EVERY = 4
         /** tier=2 接口（基本不变：温控 / APN / VPN / 短信容量 / 夜间模式 / DDNS…）每 N 个周期刷新 */
         const val T2_EVERY = 15
