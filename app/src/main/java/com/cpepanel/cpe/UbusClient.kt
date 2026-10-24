@@ -225,11 +225,12 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
                     if (resp.code == 307 || resp.code == 301 || resp.code == 302) {
                         throw UbusError(
                             UbusError.Kind.TRANSPORT, resp.code,
-                            "设备拒绝了请求（HTTP ${resp.code}）。入口校验未通过：请确认地址就是 http://192.168.0.1，且手机已连上该 CPE 的 Wi-Fi。"
+                            "The device rejected the request (HTTP ${resp.code}). The entry check failed: " +
+                                "make sure the address really is http://192.168.0.1 and the phone is on this CPE's Wi-Fi."
                         )
                     }
                     if (resp.code == 401 || resp.code == 403) {
-                        throw UbusError(UbusError.Kind.DENIED, resp.code, "设备拒绝访问（HTTP ${resp.code}）")
+                        throw UbusError(UbusError.Kind.DENIED, resp.code, "The device denied access (HTTP ${resp.code})")
                     }
                     resp.body?.string() ?: ""
                 }
@@ -239,9 +240,9 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
         } catch (e: UbusError) {
             throw e
         } catch (e: SocketTimeoutException) {
-            throw UbusError(UbusError.Kind.TRANSPORT, -1, "连接 $baseUrl 超时。请确认手机连的是这台 CPE 的 Wi-Fi，而不是流量或别的网络。")
+            throw UbusError(UbusError.Kind.TRANSPORT, -1, "Timed out connecting to $baseUrl. Make sure the phone is on this CPE's Wi-Fi, not mobile data or another network.")
         } catch (e: IOException) {
-            throw UbusError(UbusError.Kind.TRANSPORT, -1, "无法连接 $baseUrl：${e.message ?: "网络错误"}")
+            throw UbusError(UbusError.Kind.TRANSPORT, -1, "Can't reach $baseUrl: ${e.message ?: "network error"}")
         }
 
         return parse(text)
@@ -261,15 +262,15 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
 
     private fun parse(text: String): JSONObject {
         if (text.isBlank()) {
-            throw UbusError(UbusError.Kind.TRANSPORT, -2, "设备返回了空响应")
+            throw UbusError(UbusError.Kind.TRANSPORT, -2, "The device returned an empty response")
         }
         val root = try {
             JSONArray(text)
         } catch (t: Throwable) {
-            throw UbusError(UbusError.Kind.PARSE, -3, "响应不是合法 JSON：${text.take(160)}")
+            throw UbusError(UbusError.Kind.PARSE, -3, "Response isn't valid JSON: ${text.take(160)}")
         }
         val first = root.optJSONObject(0)
-            ?: throw UbusError(UbusError.Kind.PARSE, -4, "响应结构异常（缺少首元素）")
+            ?: throw UbusError(UbusError.Kind.PARSE, -4, "Unexpected response structure (no first element)")
 
         first.optJSONObject("error")?.let { err ->
             val code = err.optInt("code")
@@ -277,15 +278,15 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
             throw when (code) {
                 -32002 -> UbusError(
                     UbusError.Kind.DENIED, code,
-                    if (isLoggedIn) "登录状态已失效（-32002），请重新登录" else "该接口需要先登录（-32002）"
+                    if (isLoggedIn) "Your session has expired (-32002); sign in again" else "This call requires sign-in (-32002)"
                 )
-                -32000 -> UbusError(UbusError.Kind.NOT_SUPPORTED, code, "本机型不支持该接口（-32000）")
-                else -> UbusError(UbusError.Kind.SERVER, code, "设备返回错误 $code：$msg")
+                -32000 -> UbusError(UbusError.Kind.NOT_SUPPORTED, code, "This model doesn't support that call (-32000)")
+                else -> UbusError(UbusError.Kind.SERVER, code, "The device returned error $code: $msg")
             }
         }
 
         val result = first.optJSONArray("result")
-            ?: throw UbusError(UbusError.Kind.PARSE, -5, "响应缺少 result 字段")
+            ?: throw UbusError(UbusError.Kind.PARSE, -5, "Response is missing the result field")
 
         // 设备用的是标准 ubus 状态码，别把 2 误当成"未登录"：
         //   0 OK / 1 INVALID_COMMAND / 2 INVALID_ARGUMENT / 3 METHOD_NOT_FOUND
@@ -294,11 +295,11 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
         // 那是参数问题，跟登录状态无关。
         when (val status = result.optInt(0, 0)) {
             0 -> Unit
-            2 -> throw UbusError(UbusError.Kind.SERVER, status, "设备不接受该请求参数（status 2 INVALID_ARGUMENT）")
-            3 -> throw UbusError(UbusError.Kind.NOT_SUPPORTED, status, "本机型没有该接口（status 3 METHOD_NOT_FOUND）")
-            4, 5 -> throw UbusError(UbusError.Kind.SERVER, status, "设备暂无该数据（status $status）")
-            6 -> throw UbusError(UbusError.Kind.DENIED, status, "设备拒绝：权限不足（status 6 PERMISSION_DENIED）")
-            else -> throw UbusError(UbusError.Kind.SERVER, status, "设备返回 ubus 状态码 $status")
+            2 -> throw UbusError(UbusError.Kind.SERVER, status, "The device won't accept those parameters (status 2 INVALID_ARGUMENT)")
+            3 -> throw UbusError(UbusError.Kind.NOT_SUPPORTED, status, "This model lacks that call (status 3 METHOD_NOT_FOUND)")
+            4, 5 -> throw UbusError(UbusError.Kind.SERVER, status, "The device has no such data yet (status $status)")
+            6 -> throw UbusError(UbusError.Kind.DENIED, status, "Device refused: permission denied (status 6)")
+            else -> throw UbusError(UbusError.Kind.SERVER, status, "The device returned ubus status $status")
         }
 
         return when (val data = result.opt(1)) {
@@ -331,10 +332,10 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
         val lockLeft = info.i("login_fail_lock_lefttime", 0)
 
         if (sault.isBlank()) {
-            return LoginResult(false, "设备没有返回登录盐值（zte_web_sault），无法计算口令")
+            return LoginResult(false, "The device didn't return a login salt (zte_web_sault), so the password can't be hashed")
         }
         if (lockLeft > 0) {
-            return LoginResult(false, "设备当前锁定登录，还需等待 $lockLeft 秒", failLeft)
+            return LoginResult(false, "Sign-in is locked out on the device; wait $lockLeft s", failLeft)
         }
 
         val hash = Crypto.loginHash(plainPassword, sault)
@@ -351,11 +352,11 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
         if (code != "0" || sid.length != 32) {
             val left = if (failLeft > 0) failLeft - 1 else failLeft
             val extra = when {
-                lockLeft > 0 -> "，设备已锁定"
-                left > 0 -> "（设备侧剩余尝试次数约 $left）"
+                lockLeft > 0 -> "; the device is locked out"
+                left > 0 -> " (~$left attempts left on the device)"
                 else -> ""
             }
-            return LoginResult(false, "密码不正确$extra", left)
+            return LoginResult(false, "Incorrect password$extra", left)
         }
 
         session = sid
@@ -378,7 +379,7 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
             }
         }
 
-        return LoginResult(true, "登录成功", failLeft, sid)
+        return LoginResult(true, "Signed in", failLeft, sid)
     }
 
     fun logout() {
