@@ -34,6 +34,10 @@ data class UbusMethod(
  * 接口清单。全部来自对网页版前端 service_rpc.js 的解析 + 真机逐条实测，
  * 只收录【实测 status=0】的只读接口；前端定义了但设备 ACL 不给的
  * （network.lan / dhcp.lan / zwrt_router.alg / wireless.* 等）一律不收录。
+ *
+ * 另外也兼容 Home Assistant 那份 ZTE 端口中的“核心数据批量更新”思路：
+ *  - fast / core / monthly / sms 这几类读逻辑是按“成本 + 变化频率”拆分的；
+ *  - UI 仍然按具名常量引用，不直接写原始字符串。
  */
 object Api {
 
@@ -220,6 +224,25 @@ object Api {
     val AUTH = AUTH_NET + AUTH_WIFI + AUTH_APN + AUTH_SIGNAL + AUTH_SIM + AUTH_DEV
 
     val ALL: List<UbusMethod> get() = FREE + AUTH
+
+    /**
+     * Home Assistant 版端口所使用的“核心数据”读取集合，按频率分层后使用。我们保留一组命名集合，
+     * 让 Android 端的轮询逻辑和 ZTE HA 端的批量请求思路保持一致，而不是散落在业务代码里。
+     */
+    val FAST_POLL = listOf(
+        NET_INFO, WAN_STATUS, TRAFFIC_RT, USER_NUM, WLAN_REPORT, SIM_BRIEF
+    )
+    val CORE_POLL = listOf(
+        ROUTER_STATUS, WAN_IFACE, WLAN_IFACE, WLAN_KEY, LAN_ACCESS,
+        TRAFFIC_MONTH, SMS_CAPACITY, WEB_INFO
+    )
+    val MONTHLY_POLL = listOf(
+        TRAFFIC_LIMIT, TRAFFIC_CLEARDAY, APN_MODE, THERMAL, SNTP_MODE,
+        NEW_VERSION, DDNS, TUNNEL
+    )
+    val SMS_POLL = listOf(
+        SMS_LIST, SMS_NVITEMS, SMS_STATUS_RPT
+    )
 
     /**
      * 【写操作】接口。
