@@ -176,10 +176,23 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
     }
 
     fun restoreSession(token: String) {
-        if (token.length == 32) {
-            session = token
+        val normalized = normalizeSessionToken(token)
+        if (normalized != null) {
+            session = normalized
             isLoggedIn = true
         }
+    }
+
+    /**
+     * 跟 Home Assistant 版 ZTE API 一样，要求 session 只能是 32 字符的标准 ubus session。
+     * 这能避免出现“登陆成功但却把 000... 或零长度 token 继续当作有效 session”造成的误判。
+     */
+    fun sessionIsValid(): Boolean =
+        isLoggedIn && session.length == 32 && session != ZERO_SESSION && session.matches(Regex("^[0-9a-fA-F]{32}$"))
+
+    fun normalizeSessionToken(token: String?): String? {
+        val value = token?.trim() ?: return null
+        return value.takeIf { it.matches(Regex("^[0-9a-fA-F]{32}$")) }
     }
 
     // ────────────────────────────── 调用 ──────────────────────────────
@@ -193,7 +206,7 @@ class UbusClient(baseUrl: String = DEFAULT_BASE) {
         args: JSONObject = JSONObject(),
         withSession: Boolean = true
     ): JSONObject {
-        val sid = if (withSession && isLoggedIn) session else ZERO_SESSION
+        val sid = if (withSession && sessionIsValid()) session else ZERO_SESSION
 
         val frame = JSONObject()
             .put("jsonrpc", "2.0")
