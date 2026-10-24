@@ -40,13 +40,13 @@ fun LoginDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         containerColor = Panel,
         title = {
-            Text("登录 CPE 管理后台", color = TextHi, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text("Sign in to CPE admin", color = TextHi, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    "输入设备上标注的管理员密码。\n" +
-                        "设备限制连续错误 5 次后会锁定登录，请确认无误再提交。",
+                    "Enter the admin password printed on the device.\n" +
+                        "The device locks the account after 5 consecutive failures, so double-check before submitting.",
                     color = TextLo, fontSize = 12.sp, lineHeight = 18.sp
                 )
                 Spacer(Modifier.height(14.dp))
@@ -65,11 +65,11 @@ fun LoginDialog(
                         unfocusedBorderColor = Stroke,
                         cursorColor = Cyan
                     ),
-                    label = { Text("管理密码", color = TextMu, fontSize = 12.sp) }
+                    label = { Text("Admin password", color = TextMu, fontSize = 12.sp) }
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "密码在本机完成两次 SHA-256 加盐哈希后才发送，明文不会离开手机。",
+                    "The password is salted and hashed twice with SHA-256 on this device; the plaintext never leaves your phone.",
                     color = TextMu, fontSize = 11.sp, lineHeight = 16.sp
                 )
             }
@@ -79,12 +79,12 @@ fun LoginDialog(
                 onClick = { onConfirm(pwd) },
                 enabled = !busy && pwd.isNotEmpty()
             ) {
-                Text(if (busy) "登录中…" else "登录", color = if (busy) TextMu else Cyan, fontSize = 14.sp)
+                Text(if (busy) "Signing in…" else "Sign in", color = if (busy) TextMu else Cyan, fontSize = 14.sp)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !busy) {
-                Text("取消", color = TextLo, fontSize = 14.sp)
+                Text("Cancel", color = TextLo, fontSize = 14.sp)
             }
         }
     )
