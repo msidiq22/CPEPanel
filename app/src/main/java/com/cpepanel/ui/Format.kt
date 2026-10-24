@@ -16,21 +16,21 @@ data class Quality(val label: String, val color: Color, val ratio: Float)
  *  ≥ -80 极佳 / -80~-90 优秀 / -90~-100 良好 / -100~-110 一般 / -110~-120 较差 / < -120 极差
  */
 fun rsrpQuality(rsrp: Int): Quality = when {
-    rsrp == 0    -> Quality("无信号", TextMu, 0f)
-    rsrp >= -80  -> Quality("极佳", Mint, 1.00f)
-    rsrp >= -90  -> Quality("优秀", Mint, 0.85f)
-    rsrp >= -100 -> Quality("良好", Cyan, 0.68f)
-    rsrp >= -110 -> Quality("一般", Amber, 0.48f)
-    rsrp >= -120 -> Quality("较差", Rose, 0.28f)
-    else         -> Quality("极差", Rose, 0.12f)
+    rsrp == 0    -> Quality("No signal", TextMu, 0f)
+    rsrp >= -80  -> Quality("Excellent", Mint, 1.00f)
+    rsrp >= -90  -> Quality("Great", Mint, 0.85f)
+    rsrp >= -100 -> Quality("Good", Cyan, 0.68f)
+    rsrp >= -110 -> Quality("Fair", Amber, 0.48f)
+    rsrp >= -120 -> Quality("Weak", Rose, 0.28f)
+    else         -> Quality("Poor", Rose, 0.12f)
 }
 
 fun snrQuality(snr: Float): Quality = when {
-    snr <= 0f -> Quality("无", TextMu, 0f)
-    snr >= 20 -> Quality("优", Mint, 1.00f)
-    snr >= 13 -> Quality("良", Cyan, 0.78f)
-    snr >= 7  -> Quality("中", Amber, 0.52f)
-    else      -> Quality("差", Rose, 0.30f)
+    snr <= 0f -> Quality("None", TextMu, 0f)
+    snr >= 20 -> Quality("Excellent", Mint, 1.00f)
+    snr >= 13 -> Quality("Good", Cyan, 0.78f)
+    snr >= 7  -> Quality("Fair", Amber, 0.52f)
+    else      -> Quality("Poor", Rose, 0.30f)
 }
 
 /** 把 RSRP 归一化到 0..1，用于波形/条形显示 */
@@ -48,10 +48,10 @@ fun snrRatio(snr: Float): Float = (snr / 30f).coerceIn(0f, 1f)
 fun carrierName(provider: String, operator: String): String {
     val raw = if (provider.isNotBlank()) provider else operator
     return when (raw.uppercase()) {
-        "UNICOM", "CUCC", "CHINA UNICOM" -> "中国联通"
-        "MOBILE", "CMCC", "CHINA MOBILE" -> "中国移动"
-        "TELECOM", "CTCC", "CHINA TELECOM" -> "中国电信"
-        "BROADNET", "CBN" -> "中国广电"
+        "UNICOM", "CUCC", "CHINA UNICOM" -> "China Unicom"
+        "MOBILE", "CMCC", "CHINA MOBILE" -> "China Mobile"
+        "TELECOM", "CTCC", "CHINA TELECOM" -> "China Telecom"
+        "BROADNET", "CBN" -> "China Broadnet"
         "" -> "—"
         else -> raw
     }
@@ -68,31 +68,31 @@ fun networkTypeText(t: String): String = when (t.uppercase()) {
 }
 
 fun wanStatusText(raw: String): String = when {
-    raw.contains("connected", true) && raw.contains("ipv4", true) -> "已连接（IPv4/IPv6）"
-    raw.contains("connected", true) -> "已连接"
-    raw.contains("connecting", true) -> "连接中"
-    raw.contains("disconnect", true) -> "未连接"
+    raw.contains("connected", true) && raw.contains("ipv4", true) -> "Connected (IPv4/IPv6)"
+    raw.contains("connected", true) -> "Connected"
+    raw.contains("connecting", true) -> "Connecting"
+    raw.contains("disconnect", true) -> "Disconnected"
     raw.isBlank() -> "—"
     else -> raw
 }
 
 fun wanModeText(mode: String, auto: String): String = when (mode.uppercase()) {
-    "PPP" -> "5G 网关拨号"
-    "LTE_BRIDGE" -> "桥接模式"
-    "STATIC" -> "静态 IP"
+    "PPP" -> "5G gateway (PPP)"
+    "LTE_BRIDGE" -> "Bridge"
+    "STATIC" -> "Static IP"
     "DHCP" -> "DHCP"
     "" -> auto.ifBlank { "—" }
     else -> "$mode / ${auto.ifBlank { "-" }}"
 }
 
 fun refreshLabel(ms: Long): String = when (ms) {
-    0L -> "关闭"
-    in 0..1500 -> "1 秒"
-    3000L -> "3 秒"
-    5000L -> "5 秒"
-    10000L -> "10 秒"
-    30000L -> "30 秒"
-    else -> "${ms / 1000} 秒"
+    0L -> "Off"
+    in 0..1500 -> "1 s"
+    3000L -> "3 s"
+    5000L -> "5 s"
+    10000L -> "10 s"
+    30000L -> "30 s"
+    else -> "${ms / 1000} s"
 }
 
 // ───────────────────────── 数值格式化 ─────────────────────────
@@ -104,10 +104,10 @@ fun uptimeText(seconds: Long): String {
     val m = (seconds % 3600) / 60
     val s = seconds % 60
     return when {
-        d > 0 -> "${d}天 ${h}小时 ${m}分"
-        h > 0 -> "${h}小时 ${m}分"
-        m > 0 -> "${m}分 ${s}秒"
-        else -> "${s}秒"
+        d > 0 -> "${d}d ${h}h ${m}m"
+        h > 0 -> "${h}h ${m}m"
+        m > 0 -> "${m}m ${s}s"
+        else -> "${s}s"
     }
 }
 
